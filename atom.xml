@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[My Octopress Blog]]></title>
+  <link href="http://hyperthunk.github.com/rebar-plugin-tutorial/atom.xml" rel="self"/>
+  <link href="http://hyperthunk.github.com/rebar-plugin-tutorial/"/>
+  <updated>2011-12-29T11:29:05+00:00</updated>
+  <id>http://hyperthunk.github.com/rebar-plugin-tutorial/</id>
+  <author>
+    <name><![CDATA[Your Name]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+</feed>
