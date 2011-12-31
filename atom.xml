@@ -4,7 +4,7 @@
   <title><![CDATA[Rebar Plugins]]></title>
   <link href="http://hyperthunk.github.com/rebar-plugin-tutorial/atom.xml" rel="self"/>
   <link href="http://hyperthunk.github.com/rebar-plugin-tutorial/"/>
-  <updated>2011-12-30T01:17:16+00:00</updated>
+  <updated>2011-12-31T11:17:37+00:00</updated>
   <id>http://hyperthunk.github.com/rebar-plugin-tutorial/</id>
   <author>
     <name><![CDATA[Tim Watson]]></name>
@@ -19,7 +19,7 @@
     <updated>2011-12-29T21:49:00+00:00</updated>
     <id>http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins</id>
     <content type="html"><![CDATA[<p>This is the first post in a series on customising rebar using plugins.
-Initially, I want to focus on how plugins work, then move on to see what kind
+Initially, we&#8217;ll focus on <em>how</em> plugins work, then move on to see what kind
 of extensibility they can provide to developers.</p>
 
 <h3>Caveats</h3>
@@ -27,8 +27,10 @@ of extensibility they can provide to developers.</p>
 <p>Currently there&#8217;s no official API for plugins, so it&#8217;s best to limit which
 internals or internal functions you rely on (even if they&#8217;re exported). What
 this means empirically is that you&#8217;ll need to check your plugins for
-compatibility whenever you upgrade to a new version of rebar. I recommend using
-something like <a href="http://travis-ci.org">travis-ci</a> to keep on top of this.</p>
+compatibility whenever you upgrade to a new version of rebar. There appears
+to be some work in progress to deal with this in a more structured way, but
+for external plugins (which are hosted in their own repository) this is worth
+keeping in mind.</p>
 
 <h3>First things first</h3>
 
