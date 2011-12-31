@@ -1,6 +1,4 @@
-# Rebar Plugin Tutorial
+# [Rebar Plugin Tutorial: Plugin Anatomy](http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/)
 
-This repository contains the source code for 
-[Rebar Plugin Tutorial](http://hyperthunk.github.com/rebar-plugin-tutorial)
-site. All the source files are kept in branches, so following the links from
-the tutorial itself is probably the best way to find what you're looking for.
+This repository contains the source code for the local version of the plugin
+developed in the [Plugin Anatomy](http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/) article.
