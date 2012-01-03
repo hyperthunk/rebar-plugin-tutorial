@@ -9,8 +9,9 @@
   <meta name="author" content="Tim Watson">
 
   
-  <meta name="description" content="Blog Archive 2011 Introducing Rebar Plugins
-Dec 29 2011 Recent Posts Introducing Rebar Plugins Github Repos Status updating... @hyperthunk on Github &hellip;">
+  <meta name="description" content="Blog Archive 2011 Plugin Anatomy
+Dec 31 2011 Introducing Rebar Plugins
+Dec 29 2011 Recent Posts Plugin Anatomy Introducing Rebar Plugins Github &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +81,16 @@ Dec 29 2011 Recent Posts Introducing Rebar Plugins Github Repos Status updating.
 
 <article>
   
+<h1><a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Plugin Anatomy</a></h1>
+<time datetime="2011-12-31T14:18:00+00:00" pubdate><span class='month'>Dec</span> <span class='day'>31</span> <span class='year'>2011</span></time>
+
+
+</article>
+
+
+
+<article>
+  
 <h1><a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Introducing Rebar Plugins</a></h1>
 <time datetime="2011-12-29T21:49:00+00:00" pubdate><span class='month'>Dec</span> <span class='day'>29</span> <span class='year'>2011</span></time>
 
@@ -98,6 +109,10 @@ Dec 29 2011 Recent Posts Introducing Rebar Plugins Github Repos Status updating.
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Plugin Anatomy</a>
+      </li>
     
       <li class="post">
         <a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Introducing Rebar Plugins</a>
@@ -126,9 +141,10 @@ Dec 29 2011 Recent Posts Introducing Rebar Plugins Github Repos Status updating.
 
         github.showRepos({
             user: 'hyperthunk',
-            count: 20,
+            count: 40,
             skip_forks: true,
-            target: '#gh_repos'
+            target: '#gh_repos',
+			filter: function(repo) { return /rebar/.test(repo['name']); }
         });
     });
   </script>
@@ -147,7 +163,7 @@ Dec 29 2011 Recent Posts Introducing Rebar Plugins Github Repos Status updating.
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2011 - Tim Watson -
+  Copyright &copy; 2012 - Tim Watson -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

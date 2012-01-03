@@ -365,6 +365,8 @@ code available on github.</p>
     <p class="meta">
       
       
+        <a class="basic-alignment right" href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/" title="next Post: Plugin Anatomy">Plugin Anatomy &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -376,6 +378,10 @@ code available on github.</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Plugin Anatomy</a>
+      </li>
     
       <li class="post">
         <a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Introducing Rebar Plugins</a>
@@ -404,9 +410,10 @@ code available on github.</p>
 
         github.showRepos({
             user: 'hyperthunk',
-            count: 20,
+            count: 40,
             skip_forks: true,
-            target: '#gh_repos'
+            target: '#gh_repos',
+			filter: function(repo) { return /rebar/.test(repo['name']); }
         });
     });
   </script>
@@ -425,7 +432,7 @@ code available on github.</p>
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2011 - Tim Watson -
+  Copyright &copy; 2012 - Tim Watson -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

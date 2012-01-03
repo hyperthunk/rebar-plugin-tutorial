@@ -17,9 +17,14 @@ var github = (function(){
           var repos = [];
           if (!data || !data.repositories) { return; }
           for (var i = 0; i < data.repositories.length; i++) {
-            if (options.skip_forks && data.repositories[i].fork) { continue; }
-            repos.push(data.repositories[i]);
-          }
+            if (options.skip_forks && data.repositories[i].fork) {
+			  continue;
+			}
+			if (options['filter'] == undefined || 
+					options.filter(data.repositories[i])) {
+			  repos.push(data.repositories[i]);
+			}
+		  }
           repos.sort(function(a, b) {
             var aDate = new Date(a.pushed_at).valueOf(),
                 bDate = new Date(b.pushed_at).valueOf();
