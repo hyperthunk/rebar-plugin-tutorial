@@ -165,7 +165,7 @@ function of arity 2.</p>
 </span><span class='line'><span class="p">-</span><span class="ni">compile</span><span class="p">(</span><span class="n">export_all</span><span class="p">).</span>
 </span><span class='line'>
 </span><span class='line'><span class="nf">foo</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s">&quot;foo!</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[]).</span>
+</span><span class='line'>    <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s">&quot;foo!</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[]).</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -219,13 +219,13 @@ of the file and increment it by one, overwriting the file to store the result.</
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">bar</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="nv">FileName</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">),</span>
-</span><span class='line'>  <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Bin</span><span class="p">}</span> <span class="o">=</span> <span class="nn">file</span><span class="p">:</span><span class="n">read_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
-</span><span class='line'>  <span class="nv">Count</span> <span class="o">=</span> <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">binary_to_list</span><span class="p">(</span><span class="nv">Bin</span><span class="p">)),</span>
-</span><span class='line'>  <span class="nv">NewCount</span> <span class="o">=</span> <span class="nv">Count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>  <span class="nn">io</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;Bar command has been run </span><span class="si">~p</span><span class="s"> times</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">NewCount</span><span class="p">]),</span>
-</span><span class='line'>  <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">,</span>
-</span><span class='line'>                  <span class="nb">list_to_binary</span><span class="p">(</span><span class="nb">integer_to_list</span><span class="p">(</span><span class="nv">NewCount</span><span class="p">)),</span> <span class="p">[</span><span class="n">write</span><span class="p">]).</span>
+</span><span class='line'>    <span class="nv">FileName</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Bin</span><span class="p">}</span> <span class="o">=</span> <span class="nn">file</span><span class="p">:</span><span class="n">read_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">Count</span> <span class="o">=</span> <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">binary_to_list</span><span class="p">(</span><span class="nv">Bin</span><span class="p">)),</span>
+</span><span class='line'>    <span class="nv">NewCount</span> <span class="o">=</span> <span class="nv">Count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>    <span class="nn">io</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;Bar command has been run </span><span class="si">~p</span><span class="s"> times</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">NewCount</span><span class="p">]),</span>
+</span><span class='line'>    <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">,</span>
+</span><span class='line'>                    <span class="nb">list_to_binary</span><span class="p">(</span><span class="nb">integer_to_list</span><span class="p">(</span><span class="nv">NewCount</span><span class="p">)),</span> <span class="p">[</span><span class="n">write</span><span class="p">]).</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -243,7 +243,7 @@ ERROR: bar failed while processing /Users/t4/work/hyperthunk/rebar-plugin-tutori
           {rebar,main,1},
           {escript,run,2},
           {escript,start,1}]}}
-t4@malachi:rebar-plugin-tutorial $ 
+t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
 <p>Rebar does <em>not</em> handle exceptions apart from wrapping them up into a
@@ -270,19 +270,19 @@ before attempting to open it, so let&#8217;s try again.</p>
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">bar</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="nv">FileName</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">),</span>
-</span><span class='line'>  <span class="nv">Count</span> <span class="o">=</span> <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_regular</span><span class="p">(</span><span class="nv">FileName</span><span class="p">)</span> <span class="k">of</span>
-</span><span class='line'>      <span class="n">false</span> <span class="o">-&gt;</span>
-</span><span class='line'>          <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>      <span class="n">true</span> <span class="o">-&gt;</span>
-</span><span class='line'>          <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Bin</span><span class="p">}</span> <span class="o">=</span> <span class="nn">file</span><span class="p">:</span><span class="n">read_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
-</span><span class='line'>          <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">binary_to_list</span><span class="p">(</span><span class="nv">Bin</span><span class="p">))</span>
-</span><span class='line'>  <span class="k">end</span><span class="p">,</span>
-</span><span class='line'>  <span class="nv">NewCount</span> <span class="o">=</span> <span class="nv">Count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>  <span class="nn">io</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;Bar command has been run </span><span class="si">~p</span><span class="s"> times</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">NewCount</span><span class="p">]),</span>
-</span><span class='line'>  <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">ensure_dir</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
-</span><span class='line'>  <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">,</span>
-</span><span class='line'>                  <span class="nb">list_to_binary</span><span class="p">(</span><span class="nb">integer_to_list</span><span class="p">(</span><span class="nv">NewCount</span><span class="p">)),</span> <span class="p">[</span><span class="n">write</span><span class="p">]).</span>
+</span><span class='line'>    <span class="nv">FileName</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">Count</span> <span class="o">=</span> <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_regular</span><span class="p">(</span><span class="nv">FileName</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Bin</span><span class="p">}</span> <span class="o">=</span> <span class="nn">file</span><span class="p">:</span><span class="n">read_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
+</span><span class='line'>            <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">binary_to_list</span><span class="p">(</span><span class="nv">Bin</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>    <span class="nv">NewCount</span> <span class="o">=</span> <span class="nv">Count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>    <span class="nn">io</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;Bar command has been run </span><span class="si">~p</span><span class="s"> times</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">NewCount</span><span class="p">]),</span>
+</span><span class='line'>    <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">ensure_dir</span><span class="p">(</span><span class="nv">FileName</span><span class="p">),</span>
+</span><span class='line'>    <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="nv">FileName</span><span class="p">,</span>
+</span><span class='line'>                    <span class="nb">list_to_binary</span><span class="p">(</span><span class="nb">integer_to_list</span><span class="p">(</span><span class="nv">NewCount</span><span class="p">)),</span> <span class="p">[</span><span class="n">write</span><span class="p">]).</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -303,7 +303,7 @@ Bar command has been run 4 times
 t4@malachi:rebar-plugin-tutorial $ rebar bar
 ==&gt; rebar-plugin-tutorial (bar)
 Bar command has been run 5 times
-t4@malachi:rebar-plugin-tutorial $ 
+t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
 <p>Notice the call to <code>rebar_utils:ensure_dir/1</code>, which ensures the directory
@@ -320,12 +320,12 @@ report. The relevant code (in <code>rebar_core</code>) looks something like this
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% taken from rebar_core:run_modules/4</span>
-</span><span class='line'>  <span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nv">Command</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="nv">File</span><span class="p">)</span> <span class="k">of</span>
-</span><span class='line'>      <span class="n">ok</span> <span class="o">-&gt;</span>
-</span><span class='line'>          <span class="n">run_modules</span><span class="p">(</span><span class="nv">Rest</span><span class="p">,</span> <span class="nv">Command</span><span class="p">,</span> <span class="nv">Config</span><span class="p">,</span> <span class="nv">File</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_}</span> <span class="o">=</span> <span class="nv">Error</span> <span class="o">-&gt;</span>
-</span><span class='line'>          <span class="p">{</span><span class="nv">Module</span><span class="p">,</span> <span class="nv">Error</span><span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nv">Command</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="nv">File</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">ok</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="n">run_modules</span><span class="p">(</span><span class="nv">Rest</span><span class="p">,</span> <span class="nv">Command</span><span class="p">,</span> <span class="nv">Config</span><span class="p">,</span> <span class="nv">File</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_}</span> <span class="o">=</span> <span class="nv">Error</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="p">{</span><span class="nv">Module</span><span class="p">,</span> <span class="nv">Error</span><span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -355,7 +355,7 @@ probably more intuitive. All we need do is delete the <code>bar.count</code> fil
 </span><span class='line'><span class="p">-</span><span class="ni">define</span><span class="p">(</span><span class="no">BAR_COUNT</span><span class="p">,</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">)).</span>
 </span><span class='line'>
 </span><span class='line'><span class="nf">clean</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="nn">file</span><span class="p">:</span><span class="n">delete</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">).</span>
+</span><span class='line'>    <span class="nn">file</span><span class="p">:</span><span class="n">delete</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">).</span>
 </span><span class='line'>
 </span><span class='line'><span class="c">%% other functions ommitted</span>
 </span></code></pre></td></tr></table></div></figure>
@@ -376,10 +376,182 @@ t4@malachi:rebar-plugin-tutorial $ rebar clean
 t4@malachi:rebar-plugin-tutorial $ rebar clean
 ==&gt; rebar-plugin-tutorial (clean)
 ERROR: clean failed while processing /Users/t4/work/hyperthunk/rebar-plugin-tutorial in module foobar_plugin: {error,enoent}
-t4@malachi:rebar-plugin-tutorial $ 
+t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
-<p>Once again, the requirement for command return values to be <code>ok</code> has bitten us.</p>
+<p>Once again, the requirement for command return values to be <code>ok</code> has bitten us.
+Our call to <code>file:delete/1</code> is returning an error tuple because the file isn&#8217;t
+there after running <code>clean</code>. The file won&#8217;t be there the first time <code>clean</code> is
+run either, unless <code>bar</code> has been run first. We&#8217;ll tidy this up by delegating
+to a rebar utility module, which handles the whole thing.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% foobar_plugin.erl</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">clean</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nn">rebar_file_utils</span><span class="p">:</span><span class="n">rm_rf</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">).</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar clean
+==&gt; rebar-plugin-tutorial (clean)
+t4@malachi:rebar-plugin-tutorial $ rebar clean
+==&gt; rebar-plugin-tutorial (clean)
+t4@malachi:rebar-plugin-tutorial $ rebar clean
+==&gt; rebar-plugin-tutorial (clean)
+t4@malachi:rebar-plugin-tutorial $
+</code></pre>
+
+<p>Much better.</p>
+
+<h3>Running in <code>base_dir</code></h3>
+
+<p>Let&#8217;s see what happens when we throw in some dependencies to our
+<code>rebar.config</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% rebar.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">foobar_plugin</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[{</span><span class="n">hamcrest</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;git://github.com/hyperthunk/hamcrest-erlang.git&quot;</span><span class="p">}}]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar get-deps
+==&gt; rebar-plugin-tutorial (get-deps)
+Pulling hamcrest from {git,"git@github.com:hyperthunk/hamcrest-erlang.git"}
+Initialized empty Git repository in /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/hamcrest/.git/
+Failed to add the RSA host key for IP address '207.97.227.239' to the list of known hosts (/Users/t4/.ssh/known_hosts).
+==&gt; hamcrest (get-deps)
+Pulling proper from {git,"http://github.com/manopapad/proper.git","master"}
+Initialized empty Git repository in /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/proper/.git/
+==&gt; proper (get-deps)
+t4@malachi:rebar-plugin-tutorial $ rebar bar
+==&gt; proper (bar)
+Bar command has been run 1 times
+==&gt; hamcrest (bar)
+Bar command has been run 1 times
+==&gt; rebar-plugin-tutorial (bar)
+Bar command has been run 1 times
+t4@malachi:rebar-plugin-tutorial $
+</code></pre>
+
+<p>Our <code>bar</code> command will be run for each of the dependencies <em>as well as</em> the
+root project. Whilst this isn&#8217;t particularly problematic for this trivial
+command, more complex plugins may break (or do bad things to the dependencies)
+when executed in this manner. The
+<a href="https://github.com/hyperthunk/nodewatch">nodewatch</a> project for example, has a
+directory named <code>build</code> as part of it&#8217;s existing directory structure, so the
+removal of this directory during <code>clean</code> will effectively break the build for
+that dependency.</p>
+
+<p>You can avoid running commands in dependency dirs by passing <code>skip_deps=true</code>
+on the command line, but this can make trivial build commands far more complex
+for the user, forcing them to build your code in various steps, some with
+<code>skip_deps=true</code> and some without. The ultimate evidence of this problem is the
+presence of a <em>Makefile</em> wrapper around your rebar commands.</p>
+
+<p>It is generally better to make sure that plugins only run when and where
+they&#8217;re supposed to and we can achieve this using rebar&#8217;s <code>base_dir</code> global
+configuration property, which points to the <em>top level</em> directory - i.e., the
+first directory in which the program was executed.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">clean</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="n">is_base_dir</span><span class="p">()</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span> <span class="nn">rebar_file_utils</span><span class="p">:</span><span class="n">rm_rf</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span> <span class="n">ok</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">bar</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="n">is_base_dir</span><span class="p">()</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="nv">Count</span> <span class="o">=</span> <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_regular</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>                <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>                <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Bin</span><span class="p">}</span> <span class="o">=</span> <span class="nn">file</span><span class="p">:</span><span class="n">read_file</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">),</span>
+</span><span class='line'>                    <span class="nb">list_to_integer</span><span class="p">(</span><span class="nb">binary_to_list</span><span class="p">(</span><span class="nv">Bin</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>            <span class="nv">NewCount</span> <span class="o">=</span> <span class="nv">Count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>            <span class="nn">io</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;Bar command has been run </span><span class="si">~p</span><span class="s"> times</span><span class="si">~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">NewCount</span><span class="p">]),</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">ensure_dir</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">),</span>
+</span><span class='line'>            <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="no">?BAR_COUNT</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nb">list_to_binary</span><span class="p">(</span><span class="nb">integer_to_list</span><span class="p">(</span><span class="nv">NewCount</span><span class="p">)),</span> <span class="p">[</span><span class="n">write</span><span class="p">]);</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="n">ok</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">is_base_dir</span><span class="p">()</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">get_cwd</span><span class="p">()</span> <span class="o">==</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">undefined</span><span class="p">).</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When we run the commands after making this change, you&#8217;ll notice that rebar
+still enters the dependency directories and executes the command. We&#8217;re simply
+skipping the processing in our code, so that the user doesn&#8217;t have to think
+about <code>skip_deps</code> and the like.</p>
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar bar
+==&gt; proper (bar)
+==&gt; hamcrest (bar)
+==&gt; rebar-plugin-tutorial (bar)
+Bar command has been run 1 times
+t4@malachi:rebar-plugin-tutorial $ rebar bar
+==&gt; proper (bar)
+==&gt; hamcrest (bar)
+==&gt; rebar-plugin-tutorial (bar)
+Bar command has been run 2 times
+t4@malachi:rebar-plugin-tutorial $ rebar bar
+==&gt; proper (bar)
+==&gt; hamcrest (bar)
+==&gt; rebar-plugin-tutorial (bar)
+Bar command has been run 3 times
+t4@malachi:rebar-plugin-tutorial $ rebar clean 
+==&gt; proper (clean)
+==&gt; hamcrest (clean)
+==&gt; rebar-plugin-tutorial (clean)
+t4@malachi:rebar-plugin-tutorial $ rebar bar
+==&gt; proper (bar)
+==&gt; hamcrest (bar)
+==&gt; rebar-plugin-tutorial (bar)
+Bar command has been run 1 times
+t4@malachi:rebar-plugin-tutorial $ 
+</code></pre>
 </div>
   
   
