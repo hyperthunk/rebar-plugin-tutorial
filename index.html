@@ -71,7 +71,7 @@ callbacks we might want to expose and looking at some of the &hellip;">
       
   <header>
     
-      <h1 class="entry-title"><a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Plugin Anatomy</a></h1>
+      <h1 class="entry-title"><a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Part 2 - Plugin Anatomy</a></h1>
     
     
       <p class="meta">
@@ -148,10 +148,10 @@ t4@malachi:rebar-plugin-tutorial $
 <p>By running the <code>foo</code> command with <code>-v</code>, we get to see debugging information.
 It&#8217;s clear that the plugin was loaded from the file system. The astute reader
 will also have noticed that our <code>io:format/1</code> call has produced the <em>foo!</em> text
-in the output, but without logging prefix (e.g., <code>DEBUG:</code>) present in the rest
-of the output. If you want log messages rather than just writing to stdout,
-you&#8217;ll need to use the <code>rebar_log</code> module instead. Let&#8217;s alter our code to do
-just that.</p>
+in the output, but without logging prefix (e.g., <code>DEBUG:</code> and so on) present in
+the rest of the output. If you want log messages rather than just writing to
+stdout, you&#8217;ll need to use the <code>rebar_log</code> module instead. Let&#8217;s alter our code
+to do just that.</p>
 
 <p>All that rebar needs in order to recognise the <code>foo</code> command is an exported
 function of arity 2.</p>
@@ -196,13 +196,13 @@ DEBUG: Postdirs: []
 t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
-<p>Our call to <code>rebar_log</code> take the desired log level as an argument and we can
+<p>Our call to <code>rebar_log</code> takes the desired log level as an argument; We can
 pass one of <code>debug, info, warn, error</code>. Log messages at <code>error</code> level always
 appear. If you want to change the default log level, you&#8217;ll need to rebuild
 your rebar binary with a slight modification to the <code>rebar.app</code> config file.
 We&#8217;ll be talking about managing custom rebar forks later on in the series.</p>
 
-<h3>Handling Errors</h3>
+<h2>Handling Errors</h2>
 
 <p>Now that we&#8217;ve implemented the <code>foo</code> command, let&#8217;s take a look at implementing
 <code>bar</code>. This command will simply keep track of how many times it has been run.
@@ -229,8 +229,7 @@ of the file and increment it by one, overwriting the file to store the result.</
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>I&#8217;m using <code>io:format/2</code> instead of <code>rebar_log</code> so as to keep the noise down.
-When we run this, it goes bang very nicely&#8230;</p>
+<p>When we run this, it goes bang very nicely&#8230;</p>
 
 <pre><code>t4@malachi:rebar-plugin-tutorial $ rebar bar
 ==&gt; rebar-plugin-tutorial (bar)
@@ -247,13 +246,14 @@ t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
 <p>Rebar does <em>not</em> handle exceptions apart from wrapping them up into a
-formatted error message. If your code crashes during a command, the error will
-be printed to the console and the vm will exit (with a non-zero return code).</p>
+formatted error message. If your code crashes while it&#8217;s executing, the error
+will be printed to the console and the vm will exit (with a non-zero return
+code).</p>
 
-<p>We don&#8217;t see a line number (in R14) but <code>{error, enoent}</code> is a common return
-value in the <code>file</code> module, indicating that something (in this case, a file
-we&#8217;re trying to open) is not present. We need to check that the file exists
-before attempting to open it, so let&#8217;s try again.</p>
+<p>We don&#8217;t see a line number in the exception (using R14) but <code>{error, enoent}</code>
+is a common return value in the <code>file</code> module, indicating that something (in
+this case, a file we&#8217;re trying to open) is not present. We need to check that
+the file exists before attempting to open it, so let&#8217;s try again.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -334,7 +334,7 @@ on error, so we don&#8217;t need to handle the return code explicitly in this ca
 In general though, you need to keep this in mind when implementing new
 commands.</p>
 
-<h3>Everybody wants to go to the party. Nobody wants to stay and clean up.</h3>
+<h2>Everybody wants to go to the party. Nobody wants to stay and clean up.</h2>
 
 <p>Let&#8217;s implement a mechanism to reset the count for our command. We could create
 a new <code>reset-bar</code> command, but hooking into the existing <code>clean</code> command is
@@ -407,7 +407,7 @@ t4@malachi:rebar-plugin-tutorial $
 
 <p>Much better.</p>
 
-<h3>Running in <code>base_dir</code></h3>
+<h2>Running in <code>base_dir</code></h2>
 
 <p>Let&#8217;s see what happens when we throw in some dependencies to our
 <code>rebar.config</code>.</p>
@@ -449,7 +449,7 @@ root project. Whilst this isn&#8217;t particularly problematic for this trivial
 command, more complex plugins may break (or do bad things to the dependencies)
 when executed in this manner. The
 <a href="https://github.com/hyperthunk/nodewatch">nodewatch</a> project for example, has a
-directory named <code>build</code> as part of it&#8217;s existing directory structure, so the
+folder named <code>build</code> as part of it&#8217;s existing directory structure, so the
 removal of this directory during <code>clean</code> will effectively break the build for
 that dependency.</p>
 
@@ -457,12 +457,12 @@ that dependency.</p>
 on the command line, but this can make trivial build commands far more complex
 for the user, forcing them to build your code in various steps, some with
 <code>skip_deps=true</code> and some without. The ultimate evidence of this problem is the
-presence of a <em>Makefile</em> wrapper around your rebar commands.</p>
+presence of a <em>Makefile</em> wrapper around your use of rebar.</p>
 
 <p>It is generally better to make sure that plugins only run when and where
-they&#8217;re supposed to and we can achieve this using rebar&#8217;s <code>base_dir</code> global
-configuration property, which points to the <em>top level</em> directory - i.e., the
-first directory in which the program was executed.</p>
+they&#8217;re supposed to and we can achieve this for our plugin using rebar&#8217;s
+<code>base_dir</code> global configuration property, which points to the <em>top level</em>
+directory - i.e., the first directory in which the program was executed.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -491,7 +491,13 @@ first directory in which the program was executed.</p>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">clean</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% foobar_plugin.erl</span>
+</span><span class='line'><span class="p">-</span><span class="ni">define</span><span class="p">(</span><span class="no">BAR_COUNT</span><span class="p">,</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">,</span> <span class="s">&quot;bar.count&quot;</span><span class="p">)).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">clean</span><span class="p">(_</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
 </span><span class='line'>    <span class="k">case</span> <span class="n">is_base_dir</span><span class="p">()</span> <span class="k">of</span>
 </span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span> <span class="nn">rebar_file_utils</span><span class="p">:</span><span class="n">rm_rf</span><span class="p">(</span><span class="s">&quot;build&quot;</span><span class="p">);</span>
 </span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span> <span class="n">ok</span>
@@ -521,10 +527,10 @@ first directory in which the program was executed.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>When we run the commands after making this change, you&#8217;ll notice that rebar
-still enters the dependency directories and executes the command. We&#8217;re simply
-skipping the processing in our code, so that the user doesn&#8217;t have to think
-about <code>skip_deps</code> and the like.</p>
+<p>After making this change, we should see rebar still entering the dependency
+directories and executing the command. What we&#8217;re doing here is simply skipping
+the processing (in our code), so the user doesn&#8217;t have to think about
+<code>skip_deps</code> and the like.</p>
 
 <pre><code>t4@malachi:rebar-plugin-tutorial $ rebar bar
 ==&gt; proper (bar)
@@ -541,7 +547,7 @@ t4@malachi:rebar-plugin-tutorial $ rebar bar
 ==&gt; hamcrest (bar)
 ==&gt; rebar-plugin-tutorial (bar)
 Bar command has been run 3 times
-t4@malachi:rebar-plugin-tutorial $ rebar clean 
+t4@malachi:rebar-plugin-tutorial $ rebar clean
 ==&gt; proper (clean)
 ==&gt; hamcrest (clean)
 ==&gt; rebar-plugin-tutorial (clean)
@@ -550,8 +556,13 @@ t4@malachi:rebar-plugin-tutorial $ rebar bar
 ==&gt; hamcrest (bar)
 ==&gt; rebar-plugin-tutorial (bar)
 Bar command has been run 1 times
-t4@malachi:rebar-plugin-tutorial $ 
+t4@malachi:rebar-plugin-tutorial $
 </code></pre>
+
+<h2>Next time…</h2>
+
+<p>We&#8217;ll continue next time by looking at plugin pre and post command hooks as
+well as how to package and reuse external plugins.</p>
 </div>
   
   
@@ -564,7 +575,7 @@ t4@malachi:rebar-plugin-tutorial $
       
   <header>
     
-      <h1 class="entry-title"><a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Introducing Rebar Plugins</a></h1>
+      <h1 class="entry-title"><a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Part 1 - Introducing Rebar Plugins</a></h1>
     
     
       <p class="meta">
@@ -812,12 +823,11 @@ features to rebar that can be used across projects.</p>
 
 <h2>Next time…</h2>
 
-<p>Next time we’ll be looking at the structure of the plugin callback functions
-and how to use them in practise. We’ll also be taking a whirlwind tour of some
-of the commonly (re)used rebar modules such as rebar_config, rebar_utils and
-rebar_log, as well as discussing some of the pros and cons of using plugins and
-what the current workarounds look like. We’ll finish with a working example of
-an external plugin that adds new functionality to rebar with all the source
+<p>Next time we’ll be looking at the structure of some of the plugin callback
+functions and how to use them in practise. We’ll also be taking a whirlwind
+tour of some of the commonly (re)used rebar modules such as <code>rebar_config</code>,
+<code>rebar_utils</code> and rebar_log. We’ll finish with a working example
+of an external plugin that adds new functionality to rebar with all the source
 code available on github.</p>
 </div>
   
@@ -839,11 +849,11 @@ code available on github.</p>
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Plugin Anatomy</a>
+        <a href="/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/">Part 2 - Plugin Anatomy</a>
       </li>
     
       <li class="post">
-        <a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Introducing Rebar Plugins</a>
+        <a href="/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/">Part 1 - Introducing Rebar Plugins</a>
       </li>
     
   </ul>
