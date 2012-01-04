@@ -2,22 +2,30 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
         <loc>
-            http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2011/12/29/introducing-rebar-plugins/
+            http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2012/01/04/welcome-to-the-rebar-plugins-tutorial/
         </loc>
-        <lastmod>2012-01-04T09:07:43+00:00</lastmod>
-    </url>
-    <url>
-        <loc>
-            http://hyperthunk.github.com/rebar-plugin-tutorial/blog/2011/12/31/plugin-anatomy/
-        </loc>
-        <lastmod>2012-01-04T10:01:31+00:00</lastmod>
+        <lastmod>2012-01-04T10:35:12+00:00</lastmod>
     </url>
     <url>
         <loc>http://hyperthunk.github.com/rebar-plugin-tutorial/blog/archives/</loc>
-        <lastmod>2012-01-04T10:01:31+00:00</lastmod>
+        <lastmod>2012-01-04T10:35:12+00:00</lastmod>
+    </url>
+    <url>
+        <loc>http://hyperthunk.github.com/rebar-plugin-tutorial/blog/</loc>
+        <lastmod>2012-01-04T10:35:12+00:00</lastmod>
     </url>
     <url>
         <loc>http://hyperthunk.github.com/rebar-plugin-tutorial/</loc>
-        <lastmod>2012-01-04T10:01:31+00:00</lastmod>
+        <lastmod>2012-01-04T10:35:12+00:00</lastmod>
+    </url>
+    <url>
+        <loc>
+            http://hyperthunk.github.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/
+        </loc>
+        <lastmod>2012-01-04T10:11:01+00:00</lastmod>
+    </url>
+    <url>
+        <loc>http://hyperthunk.github.com/rebar-plugin-tutorial/part-2-plugin-anatomy/</loc>
+        <lastmod>2012-01-04T10:13:20+00:00</lastmod>
     </url>
 </urlset>
