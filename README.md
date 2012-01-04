@@ -1,7 +1,4 @@
-# Rebar Plugin Tutorial
+# [Rebar Plugin Tutorial: Plugin Packaging](http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-3-packaging-plugins/index.html)
 
-This repository contains the source code for the
-[Rebar Plugin Tutorial](http://hyperthunk.github.com/rebar-plugin-tutorial)
-web site. All the source files are kept in branches, so following the links 
-from the tutorial itself is probably the best way to find what you're looking 
-for.
+This repository contains the source code for the local version of the plugin
+developed in the [Packaging Plugins](http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-3-packaging-plugins/index.html) article.
