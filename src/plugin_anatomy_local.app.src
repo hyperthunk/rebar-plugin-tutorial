@@ -1,0 +1,12 @@
+{application, plugin_anatomy_local,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { plugin_anatomy_local_app, []}},
+  {env, []}
+ ]}.
