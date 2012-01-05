@@ -25,6 +25,7 @@
 
 -base_dir(only).
 'pre_get-deps'(Config, _AppFile) ->
+    rebar_log:log(debug, "pre_get-deps running in ~s~n", [rebar_utils:get_cwd()]),
     [ pre_load(Dep) || Dep <- rebar_config:get_local(Config, bad_deps, []) ],
     ok.
 
