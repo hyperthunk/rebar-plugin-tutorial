@@ -134,16 +134,15 @@ DEBUG: Postdirs: []
 t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
-<p>By running the <code>foo</code> command with <code>-v</code>, we get to see debugging information.
-It&#8217;s clear that the plugin was loaded from the file system. The astute reader
-will also have noticed that our <code>io:format/1</code> call has produced the <em>foo!</em> text
-in the output, but without logging prefix (e.g., <code>DEBUG:</code> and so on) present in
-the rest of the output. If you want log messages rather than just writing to
-stdout, you&#8217;ll need to use the <code>rebar_log</code> module instead. Let&#8217;s alter our code
-to do just that.</p>
-
-<p>All that rebar needs in order to recognise the <code>foo</code> command is an exported
-function of arity 2.</p>
+<p>By running the <code>foo</code> command with <code>-v</code>, we&#8217;re treated to a slew of (often quite
+useful) debugging information.
+It&#8217;s clear from this that our plugin was indeed loaded from the file system,
+as we expected. The astute reader may have also noticed that the <em>foo!</em> text&#8217;s
+appearance in the output is lacking the logging prefixes (such as <code>DEBUG:</code>,
+<code>INFO:</code> and so on) present in many of the other log lines. If you want
+generate log messages such as these, rather than just writing to stdout, you&#8217;ll
+need to use the <code>rebar_log</code> module instead. Let&#8217;s alter our code to do just
+that.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -165,9 +164,9 @@ function of arity 2.</p>
 t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
-<p>And there&#8217;s nothing there. This is because rebar&#8217;s default log level is
-<code>error</code>, so nothing below that level is printed out unless the <code>-v</code> switch is
-given:</p>
+<p>And there&#8217;s nothing there. Because rebar&#8217;s default log level is set to <code>error</code>
+in the <code>rebar.app</code> configuration file, nothing below that level is printed out
+unless the <code>-v</code> switch is given:</p>
 
 <pre><code>t4@malachi:rebar-plugin-tutorial $ rebar foo -v
 DEBUG: Rebar location: "/Users/t4/bin/rebar"
@@ -186,7 +185,7 @@ t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
 <p>Our call to <code>rebar_log</code> takes the desired log level as an argument; We can
-pass one of <code>debug, info, warn, error</code>. Log messages at <code>error</code> level always
+pass one of debug, info, warn or error. Log messages at <code>error</code> level always
 appear. If you want to change the default log level, you&#8217;ll need to rebuild
 your rebar binary with a slight modification to the <code>rebar.app</code> config file.
 We&#8217;ll be talking about managing custom rebar forks later on in the series.</p>
@@ -196,7 +195,7 @@ We&#8217;ll be talking about managing custom rebar forks later on in the series.
 <p>Now that we&#8217;ve implemented the <code>foo</code> command, let&#8217;s take a look at implementing
 <code>bar</code>. This command will simply keep track of how many times it has been run.
 To do this, we&#8217;ll keep the count in a file stored in a subdirectory of the
-project, <code>/build/foo.count</code>. Assuming the file exists, we&#8217;ll read the count out
+project: <code>/build/foo.count</code>. Assuming the file exists, we read the count out
 of the file and increment it by one, overwriting the file to store the result.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -234,15 +233,17 @@ ERROR: bar failed while processing /Users/t4/work/hyperthunk/rebar-plugin-tutori
 t4@malachi:rebar-plugin-tutorial $
 </code></pre>
 
-<p>Rebar does <em>not</em> handle exceptions apart from wrapping them up into a
-formatted error message. If your code crashes while it&#8217;s executing, the error
-will be printed to the console and the vm will exit (with a non-zero return
-code).</p>
+<p>Our deliberate oversight illustrates an important point: rebar does <em>not</em>
+handle exceptions apart from wrapping them up into a formatted error message.
+If your code crashes while it&#8217;s executing, the error will be printed to the
+console and the vm will subsequently exit (with a well behaved non-zero exit
+status).</p>
 
 <p>We don&#8217;t see a line number in the exception (using R14) but <code>{error, enoent}</code>
 is a common return value in the <code>file</code> module, indicating that something (in
-this case, a file we&#8217;re trying to open) is not present. We need to check that
-the file exists before attempting to open it, so let&#8217;s try again.</p>
+this case, a file we&#8217;re trying to open) is not present. It was fairly obvious
+the we need to check whether the file exists before attempting to open it, so
+let&#8217;s try again.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -298,8 +299,8 @@ t4@malachi:rebar-plugin-tutorial $
 <p>Notice the call to <code>rebar_utils:ensure_dir/1</code>, which ensures the directory
 exists prior to writing the file. Another thing to take note of is that plugin
 commands need to return the atom <code>ok</code> if they have succeeded, otherwise rebar
-will stop executing the current command and halt the vm with an error status
-report. The relevant code (in <code>rebar_core</code>) looks something like this:</p>
+will stop executing the current command and halt the vm with an error report.
+The relevant code (in <code>rebar_core</code>) looks something like this:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -319,9 +320,8 @@ report. The relevant code (in <code>rebar_core</code>) looks something like this
 
 
 <p>The call to <code>file:write_file/3</code> returns <code>ok</code> on success and <code>{error, Reason}</code>
-on error, so we don&#8217;t need to handle the return code explicitly in this case.
-In general though, you need to keep this in mind when implementing new
-commands.</p>
+on error, so we don&#8217;t need to handle the return value explicitly at all. In
+general though, you need to keep this in mind when implementing new commands.</p>
 
 <h2>Everybody wants to go to the party. Nobody wants to stay and clean up.</h2>
 
@@ -618,6 +618,10 @@ well as how to package and reuse external plugins.</p>
     
       <li class="post">
         <a href="/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2 - Plugin Anatomy</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-3-packaging-plugins/index.html">Part 3 - Packaging Plugins</a>
       </li>
     
   </ul>

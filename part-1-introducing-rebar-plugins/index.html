@@ -105,19 +105,21 @@ real explanation being the <a href="https://github.com/basho/rebar/blob/master/r
 We’re not going to cover hooks in much detail, as they are simple enough to
 understand and are only really applicable to simple scripting tasks that don’t
 require, for example, cross platform support or complex logic. Plugin
-Extensions on the other hand, are documented (to some extend anyway), and
+Extensions on the other hand, are documented (to some extent), and
 provide a much greater degree of extensibility to developers.</p>
 
 <p>Before we can talk sensibly about plugins, we need to take a look at some of
-the fundamentals behind rebar, especially its handling of build configuration
-files and command processing logic. For any given command, say <code>foo</code>, rebar
+rebar&#8217;s fundamentals, especially its handling of build configuration
+files and command processing logic.</p>
+
+<p>For any given command, say <code>foo</code>, rebar
 understands the command if (and only if) <em>one of the modules it knows about</em>
-exports a function with a signature that matches:</p>
+exports a function with a signature that has:</p>
 
 <ul>
-<li>the name of the command and arity 2</li>
-<li>the name of the command prefixed with pre_, and arity 2</li>
-<li>the name of the command prefixed with post_, and arity 2</li>
+<li>the same name as the command and is of arity 2</li>
+<li>the same name as the command but is prefixed with pre_ and is of arity 2</li>
+<li>the same name as the command but is prefixed with post_ and is of arity 2</li>
 </ul>
 
 
@@ -226,7 +228,7 @@ something about. There are essentially two ways that rebar knows about modules:<
 <p>Modules registered in the rebar.app configuration file are basically part of
 rebar itself. Plugins on the other hand, are modules which any given build
 configuration (somewhere in the tree) registers via the <code>plugins</code> configuration
-element. This configuration is built up to include every level, including the
+section. This configuration is built up to include every level, including the
 global config, so if you’ve got no local <code>plugins</code> configuration, this does
 not mean <code>plugins</code> won’t get run in your subdirectories. In practise, this
 means that plugins registered up top (e.g., globally or in the <code>base_dir</code>
@@ -274,7 +276,7 @@ plugins without going outside of the project source tree.</p>
 <p>The key thing to understand here is that the plugin must be installed <em>somehow</em>
 in order for rebar to pick it up. We’ve mentioned that rebar knows about
 plugins because they’re in the <code>{plugins, ListOfPlugins}</code>
-configuration element,  but in practise things aren’t quite that simple. In
+configuration section,  but in practise things aren’t quite that simple. In
 order for a plugin to actually get executed (in response to a specific command,
 it’s pre/post hooks or indeed the special preprocess and postprocess commands),
 it needs to be on the code path! This is fine if the plugin is installed
@@ -286,24 +288,20 @@ nicely update the code path for all commands, so as long as you’re not trying
 to make the plugin run before rebar’s built-in modules (which is, in fact,
 impossible) then it’ll be on the path. This once again doesn’t always work in
 practise, because the function that builds up the code path makes no
-attempt to deal with transitive dependencies. I keep meaning to do a pull
-request for this, but I’m waiting for others to get through the queue first.</p>
+attempt to deal with transitive dependencies..</p>
 
 <h3>Local Plugins</h3>
 
-<p>You probably recall that I mentioned plugins need to be on the code path in
-order to be executed by rebar? Well thanks to a nifty pull request from yours
-truly, there is in fact another way. If rebar cannot find a module on the code
-path matching the name given to the plugins configuration element, it will
-attempt to locate a source file for the module in either the base_dir or the
-directory indicated by the plugin_dir config element. If it finds a source file
-with a matching name, it attempts to compile it on the fly and load the beam
-code into the running emulator, thereby making the plugin available
-dynamically.</p>
+<p>If rebar cannot find a module on the code path matching the name given to the
+plugins configuration section, it will attempt to locate a source file for the
+module in either the <code>base_dir</code> or the directory indicated by the plugin_dir
+config section. If it finds a source file with a matching name, it attempts to
+compile it on the fly and load the beam code into the running emulator, thereby
+making the plugin available dynamically.</p>
 
 <p>The aim of local plugins is to provide a mechanism for scripting complex
 tasks/hooks that apply only to your specific project. This is in contrast with
-the idea of external/pre-packaged plugins, which provide add-on re-usable
+the idea of external/pre-packaged plugins, which provide add-on, re-usable
 features to rebar that can be used across projects.</p>
 
 <h2>Next time…</h2>
@@ -380,6 +378,10 @@ code available on github.</p>
     
       <li class="post">
         <a href="/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2 - Plugin Anatomy</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-3-packaging-plugins/index.html">Part 3 - Packaging Plugins</a>
       </li>
     
   </ul>

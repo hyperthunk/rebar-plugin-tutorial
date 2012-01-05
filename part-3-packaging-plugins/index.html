@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Part 3 - Packaging Plugins - Rebar Plugins</title>
+  <meta name="author" content="Tim Watson">
+
+  
+  <meta name="description" content="Part 3 - Packaging Plugins Jan 4th, 2012 In parts one and two we introduced rebar plugins and looked at the basic anatomy of a
+plugin module. In &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-3-packaging-plugins">
+  <link href="/rebar-plugin-tutorial/favicon.png" rel="icon">
+  <link href="/rebar-plugin-tutorial/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/rebar-plugin-tutorial/javascripts/modernizr-2.0.js"></script>
+  <script src="/rebar-plugin-tutorial/javascripts/ender.js"></script>
+  <script src="/rebar-plugin-tutorial/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/rebar-plugin-tutorial/atom.xml" rel="alternate" title="Rebar Plugins" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/rebar-plugin-tutorial/">Rebar Plugins</a></h1>
+  
+    <h2>Extreme Build Customisations</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/rebar-plugin-tutorial/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:hyperthunk.github.com/rebar-plugin-tutorial" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/rebar-plugin-tutorial/">Home</a></li>
+  <li><a href="/rebar-plugin-tutorial/blog/archives">Blog Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article role="article">
+  
+  <header>
+    <h1 class="entry-title">Part 3 - Packaging Plugins</h1>
+    <p class="meta">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-04T11:25:00+00:00" pubdate data-updated="true">Jan 4<span>th</span>, 2012</time></p>
+  </header>
+  
+  <p>In parts <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">one</a> and <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">two</a> we introduced rebar plugins and looked at the basic anatomy of a
+plugin module. In this article we&#8217;ll be looking at how you can package plugins
+as <em>external dependencies</em> along with additional dependencies that your plugin
+requires. We&#8217;ll also be looking at the pre and post command hooks that plugins
+can utilise in order to run before (or after) a given command.</p>
+
+<p>The accompanying source code can be found in the
+<a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging">plugin-packaging</a> branch of the
+<a href="https://github.com/hyperthunk/rebar-plugin-tutorial">main git repository</a>. Some additional libraries are also used and
+links to the sources for these are provided both in the text, and in the final
+<em>links</em> section.</p>
+
+<h2>Packaging Requirements</h2>
+
+<p>If we wish to re-use a plugin across multiple projects, it makes sense to
+package the plugin as an independent component rather than duplicate the source
+code in many places. Once the plugin is packaged up and available for use
+across projects, users can take advantage of it by either</p>
+
+<ol>
+<li>installing the plugin <em>globally</em> (e.g., into <code>ERL_LIBS</code>)</li>
+<li>installing the plugin as part of a standard <code>rebar get-deps compile</code> build process</li>
+</ol>
+
+
+<p>We won&#8217;t be looking at the approach for (1) until later in the series, so our
+attention will be turned to packaging plugins in a manner that allows them to
+be included in a projects as one of it&#8217;s dependencies.</p>
+
+<p>To demonstrate how this works we will develop two small projects, one which
+implements a simple build plugin, and another which uses the plugin as part of
+its build process. Along the way, we&#8217;ll meet a few more utility functions that
+can help with authoring plugins.</p>
+
+<h2>Introducing the <em>bad_deps_plugin</em></h2>
+
+<p>We&#8217;re going to implement a plugin that allows us to fetch an Erlang library
+from github so we can use it as a dependency. Of course, rebar already allows
+us to do this, but there are some limitations that it places on potential
+dependencies - they <strong>must</strong> be packaged as an OTP application or library. Now
+the common approach to dealing with projects which are not packaged <em>properly</em>
+(from rebar&#8217;s point of view) in their source repository, is to fork the
+offending repo and fix the project structure so that rebar can handle it. This
+creates a bit of a maintenance headache for the person maintaining the fork, so
+we&#8217;re going to handle the <em>fixing</em> with a simple plugin.</p>
+
+<hr />
+
+<h3>CAVEAT!</h3>
+
+<p>This plugin is being developed for illustrative purposes only - we&#8217;ve chosen
+this particular area because it represents an interesting problem to solve
+using plugins. There are numerous and better ways to deal with non-standard
+dependencies, which we&#8217;ll discuss at the end of the article.</p>
+
+<hr />
+
+<p>The <em>badly behaving</em> project we&#8217;re going to <em>fix</em> is
+<a href="https://github.com/aphyr/skewbinheap">Kyle Kingsbury&#8217;s Implementation of a Skewed Binary Heap</a>.
+The git repository has all the Erlang sources (both the implementation and the
+test code) in the top level directory, so we&#8217;ll be fetching the sources and
+then rebuilding the required file and directory structure on the fly. Because
+rebar is <em>opinionated</em> about project structure - and this is something to be
+commended - we cannot use the <code>get-deps</code> command to fetch the repository,
+because rebar will fail after fetching the dependency because there is no
+.app or .app.src file present.</p>
+
+<p>We could bemoan the fact that the fetching and installation of dependencies
+is coupled in this way, but instead we&#8217;ll stick to problem solving and use
+rebar&#8217;s <code>rebar_utils:sh</code> function to run the <code>git clone</code> command <em>by hand</em>.</p>
+
+<p>We&#8217;re not using rebar&#8217;s standard <em>deps</em> mechanism to get hold of our
+dependency, yet we&#8217;ll have to store the git repository information somewhere in
+our build configuration. It&#8217;s time to introduce the rebar configuration API.</p>
+
+<h2>Handling Custom Configuration</h2>
+
+<p>In order to make sure that the dependency is still <em>required</em> by rebar, even
+though it isn&#8217;t being fetched in the usual manner, we will include an entry in
+the <code>deps</code> configuration section but exclude the <em>source</em> element of the config
+tuple. Doing this makes rebar aware that the stated dependency is required, but
+excludes the possibility of fetching it remotely. We will also introduce a new
+configuration section, named <code>bad_deps</code> in which to store the git url we need
+in order to fetch the repository ourselves.</p>
+
+<p>Let&#8217;s take a look at the client&#8217;s <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/blob/plugin-packaging-consumer/rebar.config">rebar config file</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% rebar.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">bad_deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;https://github.com/aphyr/skewbinheap.git&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Configuration data is made available to plugins in the first argument to the
+command(s) they are exporting. The configuration tuples are held in an opaque
+data structure, so all access should be done using the <code>rebar_config</code> module.
+Here&#8217;s our first stab at getting the configuration data out:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">bad_deps_plugin</span><span class="p">).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">compile</span><span class="p">(</span><span class="n">export_all</span><span class="p">).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">&#39;check-config&#39;</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s">&quot;config = </span><span class="si">~p~n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">[</span><span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_local</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">bad_deps</span><span class="p">,</span> <span class="p">[])]).</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Actually running this without trying to use it in a sample project is a bit of
+a pain, not least because we need rebar to create the initial config for us.
+I often skip trying to unit test plugins, not because it is impossible - there
+are certainly ways to do it using eunit and/or common_test - but because in
+general I find it easier to write a sample project to demonstrate the plugin&#8217;s
+use, and then use the <a href="https://github.com/hyperthunk/rebar_retest_plugin">Rebar ReTest Plugin</a> to do CLI-centric
+integration testing. There will be a full set of articles on testing plugins
+at a later date.</p>
+
+<p>For now, we&#8217;ll just put a <em>demo</em> config file locally in the plugin project so
+that we can experiment:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% in file demo</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugin_dir</span><span class="p">,</span> <span class="s">&quot;src&quot;</span><span class="p">}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">bad_deps_plugin</span><span class="p">]}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">bad_deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;https://github.com/aphyr/skewbinheap.git&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now on the command line, we can take a look&#8230;.</p>
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar -C demo check-config -v
+DEBUG: Rebar location: "/Users/t4/bin/rebar"
+DEBUG: Load global config file "/Users/t4/.rebar/config"
+DEBUG: Consult config file "/Users/t4/.rebar/config"
+DEBUG: Consult config file "/Users/t4/work/hyperthunk/rebar-plugin-tutorial/demo"
+DEBUG: Entering /Users/t4/work/hyperthunk/rebar-plugin-tutorial
+DEBUG: Available deps: []
+DEBUG: Missing deps  : []
+INFO:  Loading plugin bad_deps_plugin from src/bad_deps_plugin.erl
+WARN:  Missing plugins: [rebar_skip_deps]
+DEBUG: Predirs: []
+==&gt; rebar-plugin-tutorial (check-config)
+INFO:  config = [{skewbinheap,"https://github.com/aphyr/skewbinheap.git"}]
+DEBUG: Postdirs: []
+t4@malachi:rebar-plugin-tutorial $
+</code></pre>
+
+<p>It probably didn&#8217;t go unnoticed that the config handling function we called in
+our plugin&#8217;s <code>check-config</code> command is called get<strong>_local</strong> - it is well worth
+understanding this early on. There are two kinds of configuration that rebar
+works with</p>
+
+<ol>
+<li>Global configuration - stored in the rebar application environment settings</li>
+<li>Local configuration - read from a <code>.config</code> file and passed about explicitly</li>
+</ol>
+
+
+<p>Of the two, local configuration data is itself handled in two disparate ways.
+As we mentioned in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">Part 1</a>, each time a new directory is processed, a
+new configuration set is created - either by reading the local <code>rebar.config</code>
+file or creating an empty one. It is this <em>local to the directory</em>
+configuration which we&#8217;re reading when we call <code>rebar_config:get_local/3</code>. The
+other configuration reading functions <code>get/3</code> and <code>get_list/3</code> do the same
+thing: they search the entire config set (i.e., including any ancestors) and
+return the first entry with the given key.</p>
+
+<p>We must always bare in mind that it is up to the consumer of the configuration
+API to decide how they want to deal with the given config. They may choose one
+of</p>
+
+<ul>
+<li><code>get_local</code> - returns config for the current directory, or a default value</li>
+<li><code>get</code>/<code>get_list</code> - walks <em>backwards</em> through the config set to return config as soon as it is found</li>
+<li><code>get_all</code> - gets all (explicitly stated) values for the whole config set</li>
+</ul>
+
+
+<p>Just to make sure this point is clear, we&#8217;ll look at an example. We will assume
+that we have both parent and child directories with the following (respective)
+configurations:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% parent rebar.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;bar&quot;</span><span class="p">}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">%% child rebar.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;baz&quot;</span><span class="p">}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Imagine that our <code>check-config</code> command was globally available to rebar - hint:
+we&#8217;ll be implementing a plugin to do this later on - and takes the required key
+as <code>key=&lt;name&gt;</code>:</p>
+
+<pre><code>t4@malachi:parent $ rebar check-config key=foo
+==&gt; parent (check-config)
+config key 'foo' found (get_local): "bar"
+==&gt; child (check-config)
+config key 'foo' found (get_local): "baz"
+config key 'foo' found (get_all): ["bar", "baz"]
+t4@malachi:parent $
+</code></pre>
+
+<p>Now if we remove the <code>rebar.config</code> file from the <code>child</code> directory, we see
+something altogether different:</p>
+
+<pre><code>t4@malachi:parent $ rebar check-config key=foo
+==&gt; parent (check-config)
+config key 'foo' found (get_local): "bar"
+==&gt; child (check-config)
+config key 'foo' not found (get_local)
+config key 'foo' found (get): "bar"
+config key 'foo' found (get_all): ["bar"]
+t4@malachi:parent $
+</code></pre>
+
+<p>So as we can see, the consumer has a lot of control over the scope from which
+configuration sections should be taken.</p>
+
+<h2>Links</h2>
+
+<p>As promised, all the relevant links for this article are listed below.</p>
+
+<ol>
+<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial">main source code repository</a></li>
+<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging">branch containing the sample plugin code</a></li>
+<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging-consumer">branch containing the sample project</a></li>
+<li><a href="https://github.com/hyperthunk/annotations">annotations library</a></li>
+<li><a href="https://github.com/hyperthunk/rebar_annotations">rebar annotations plugin support library</a></li>
+</ol>
+
+
+  
+    <footer>
+      <p class="meta">
+        
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-04T11:25:00+00:00" pubdate data-updated="true">Jan 4<span>th</span>, 2012</time>
+        
+      </p>
+      
+        <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://hyperthunk.github.com/rebar-plugin-tutorial/part-3-packaging-plugins/index.html" data-via="" data-counturl="http://hyperthunk.github.com/rebar-plugin-tutorial/part-3-packaging-plugins/index.html" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+</div>
+
+      
+    </footer>
+  
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Pages</h1>
+  <ul id="pages">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/atom.xml"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/archives/index.html">Blog Archive</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/index.html"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/index.html"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">Part 1 - Introducing Rebar Plugins</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2 - Plugin Anatomy</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-3-packaging-plugins/index.html">Part 3 - Packaging Plugins</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/2012/01/04/welcome-to-the-rebar-plugins-tutorial/">Welcome to the Rebar Plugins tutorial</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>Github Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/hyperthunk">@hyperthunk</a> on Github
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'hyperthunk',
+            count: 40,
+            skip_forks: true,
+            target: '#gh_repos',
+			filter: function(repo) { return /rebar/.test(repo['name']); }
+        });
+    });
+  </script>
+  <script src="/rebar-plugin-tutorial/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Tim Watson -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
