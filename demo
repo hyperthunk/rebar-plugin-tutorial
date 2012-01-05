@@ -1,0 +1,6 @@
+
+{plugin_dir, "src"}.
+{plugins, [bad_deps_plugin]}.
+{bad_deps, [
+    {skewbinheap, "https://github.com/okeuday/skewbinheap.git"}
+]}.
