@@ -20,8 +20,19 @@
 %% THE SOFTWARE.
 %% -----------------------------------------------------------------------------
 -module(bad_deps_plugin).
--compile(export_all).
+-export(['pre_get-deps'/2]).
 
-'check-config'(Config, _AppFile) ->
-    rebar_log:log(info, "config = ~p~n", 
-        [rebar_config:get_local(Config, bad_deps, [])]).
+'pre_get-deps'(Config, _AppFile) ->
+    [ pre_load(Dep) || Dep <- rebar_config:get_local(Config, bad_deps, []) ],
+    ok.
+
+pre_load({Dep, Url}) ->
+    DepsDir = rebar_config:get_global(deps_dir, "deps"),
+    TargetDir = filename:join(DepsDir, atom_to_list(Dep)),
+    case filelib:is_dir(TargetDir) of
+        true ->
+            %% we've already fetched this one
+            ok;
+        false ->
+            rebar_utils:sh("git clone " ++ Url, [{cd, DepsDir}])
+    end.
