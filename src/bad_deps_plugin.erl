@@ -21,7 +21,9 @@
 %% -----------------------------------------------------------------------------
 -module(bad_deps_plugin).
 -export(['pre_get-deps'/2]).
+-include_lib("annotations/include/annotations.hrl").
 
+-base_dir(only).
 'pre_get-deps'(Config, _AppFile) ->
     [ pre_load(Dep) || Dep <- rebar_config:get_local(Config, bad_deps, []) ],
     ok.
