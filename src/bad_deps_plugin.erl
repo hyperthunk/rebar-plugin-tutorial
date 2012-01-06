@@ -47,12 +47,25 @@ pre_load({Dep, Url, Config}) ->
                                      DepsDir, Project, "test"]),
             rebar_utils:ensure_dir(filename:join(SrcDir, "foo.txt")),
             rebar_utils:ensure_dir(filename:join(TestDir, "foo.txt")),
+
+            generate_app_file(Project, ProjectDir),
             SrcPattern = proplists:get_value(src_main, Config, "^.*\\.erl\$"),
             TestPattern = proplists:get_value(src_test,
                                               Config, "^.*_tests\\.erl\$"),
             [ mv(Src, SrcDir) || Src <- find(ProjectDir, SrcPattern)],
             [ mv(Src, TestDir) || Src <- find(ProjectDir, TestPattern)]
     end.
+
+generate_app_file(Project, ProjectDir) ->
+    Target = filename:join([ProjectDir, "src", Project ++ ".app.src"]),
+    file:write_file(Target, app(Project), [write]).
+
+app(Project) ->
+    App = {application, list_to_atom(Project),
+           [{description, ""},
+            {vsn, "1"},
+            {applications, [kernel, stdlib]}]},
+    io_lib:format("~p.\n", [App]).
 
 find(ProjectDir, SrcPattern) ->
     rebar_utils:find_files(ProjectDir, SrcPattern).
