@@ -501,9 +501,11 @@ this doesn&#8217;t work without significant coding on the part of the plugin aut
 <p>For now, we&#8217;re just going to exclude anything outside of <code>base_dir</code> as we did
 in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>. To avoid writing all the tedious <code>case is_base_dir()</code>
 boilerplate everywhere, we&#8217;re going to utilise an <a href="https://github.com/hyperthunk/annotations">annotation</a>
-that I&#8217;ve written in to a little library, which will do the work for us. This
-also gives us an opportunity to look at how plugins with their own dependencies
-need to be handled when they&#8217;re included in a project.</p>
+that I&#8217;ve written in to a
+<a href="https://github.com/hyperthunk/rebar_annotations/blob/master/src/base_dir.erl">little library</a>,
+which will do the work for us. This also gives us an opportunity to look at
+how plugins with their own dependencies need to be handled when they&#8217;re
+included in a project.</p>
 
 <p>Back in the <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">part3-plugin branch</a>, we&#8217;ll switch over to use the
 <a href="https://github.com/hyperthunk/annotations">annotation</a>. First the rebar build config needs tweaking so that
