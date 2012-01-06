@@ -25,17 +25,40 @@
 
 -base_dir(only).
 'pre_get-deps'(Config, _AppFile) ->
-    rebar_log:log(debug, "pre_get-deps running in ~s~n", [rebar_utils:get_cwd()]),
+    rebar_log:log(debug, "pre_get-deps running in ~s~n",
+                    [rebar_utils:get_cwd()]),
     [ pre_load(Dep) || Dep <- rebar_config:get_local(Config, bad_deps, []) ],
     ok.
 
-pre_load({Dep, Url}) ->
+pre_load({Dep, Url, Config}) ->
     DepsDir = rebar_config:get_global(deps_dir, "deps"),
-    TargetDir = filename:join(DepsDir, atom_to_list(Dep)),
+    Project = atom_to_list(Dep),
+    TargetDir = filename:join(DepsDir, Project),
     case filelib:is_dir(TargetDir) of
         true ->
             %% we've already fetched this one
             ok;
         false ->
-            rebar_utils:sh("git clone " ++ Url, [{cd, DepsDir}])
+            rebar_utils:sh("git clone " ++ Url, [{cd, DepsDir}]),
+            ProjectDir = filename:join([rebar_utils:get_cwd(),
+                                    DepsDir, Project]),
+            SrcDir = filename:join(ProjectDir, "src"),
+            TestDir = filename:join([rebar_utils:get_cwd(),
+                                     DepsDir, Project, "test"]),
+            rebar_utils:ensure_dir(filename:join(SrcDir, "foo.txt")),
+            rebar_utils:ensure_dir(filename:join(TestDir, "foo.txt")),
+            SrcPattern = proplists:get_value(src_main, Config, "^.*\\.erl\$"),
+            TestPattern = proplists:get_value(src_test,
+                                              Config, "^.*_tests\\.erl\$"),
+            [ mv(Src, SrcDir) || Src <- find(ProjectDir, SrcPattern)],
+            [ mv(Src, TestDir) || Src <- find(ProjectDir, TestPattern)]
+    end.
+
+find(ProjectDir, SrcPattern) ->
+    rebar_utils:find_files(ProjectDir, SrcPattern).
+
+mv(Src, SrcDir) ->
+    case rebar_file_utils:mv(Src, filename:join(Src, SrcDir)) of
+        ok -> ok;
+        {error, Reason} -> rebar_utils:abort(Reason, [])
     end.
