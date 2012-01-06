@@ -2,11 +2,8 @@
  [
   {description, ""},
   {vsn, "1"},
-  {registered, []},
   {applications, [
                   kernel,
                   stdlib
-                 ]},
-  {mod, { bad_deps_plugin_app, []}},
-  {env, []}
+                 ]}
  ]}.
