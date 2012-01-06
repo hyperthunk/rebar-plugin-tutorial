@@ -90,7 +90,7 @@ requires. We&#8217;ll also be looking at the pre and post command hooks that plu
 can utilise in order to run before (or after) a given command.</p>
 
 <p>The accompanying source code can be found in the
-<a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging">plugin-packaging</a> branch of the
+<a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">plugin-packaging</a> branch of the
 <a href="https://github.com/hyperthunk/rebar-plugin-tutorial">main git repository</a>. Some additional libraries are also used and
 links to the sources for these are provided both in the text, and in the final
 <em>links</em> section.</p>
@@ -168,7 +168,7 @@ excludes the possibility of fetching it remotely. We will also introduce a new
 configuration section, named <code>bad_deps</code> in which to store the git url we need
 in order to fetch the repository ourselves.</p>
 
-<p>Let&#8217;s take a look at the client&#8217;s <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/blob/plugin-packaging-consumer/rebar.config">rebar config file</a>.</p>
+<p>Let&#8217;s take a look at the client&#8217;s <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/blob/part3-project/rebar.config">rebar config file</a>.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -277,11 +277,11 @@ return the first entry with the given key.</p>
 
 <p>We must always bare in mind that it is up to the consumer of the configuration
 API to decide how they want to deal with the given config. They may choose one
-of</p>
+of the following functions to look up a given key</p>
 
 <ul>
-<li><code>get_local</code> - returns config for the current directory, or a default value</li>
-<li><code>get</code>/<code>get_list</code> - walks <em>backwards</em> through the config set to return config as soon as it is found</li>
+<li><code>get_local</code> - reads the config for the current directory, or a default value</li>
+<li><code>get</code>/<code>get_list</code> - returns the first config section matching the key</li>
 <li><code>get_all</code> - gets all (explicitly stated) values for the whole config set</li>
 </ul>
 
@@ -295,42 +295,579 @@ configurations:</p>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% parent rebar.config</span>
 </span><span class='line'><span class="p">{</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;bar&quot;</span><span class="p">}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">squish</span><span class="p">,</span> <span class="s">&quot;thingumy&quot;</span><span class="p">}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">sub_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;child&quot;</span><span class="p">]}.</span>
 </span><span class='line'>
 </span><span class='line'><span class="c">%% child rebar.config</span>
 </span><span class='line'><span class="p">{</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;baz&quot;</span><span class="p">}.</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Imagine that our <code>check-config</code> command was globally available to rebar - hint:
-we&#8217;ll be implementing a plugin to do this later on - and takes the required key
-as <code>key=&lt;name&gt;</code>:</p>
+<p>Imagine that our <code>check-config</code> command was globally available to rebar and
+takes the required key as <code>key=&lt;name&gt;</code> on the command line:</p>
 
 <pre><code>t4@malachi:parent $ rebar check-config key=foo
-==&gt; parent (check-config)
-config key 'foo' found (get_local): "bar"
 ==&gt; child (check-config)
 config key 'foo' found (get_local): "baz"
-config key 'foo' found (get_all): ["bar", "baz"]
-t4@malachi:parent $
-</code></pre>
-
-<p>Now if we remove the <code>rebar.config</code> file from the <code>child</code> directory, we see
-something altogether different:</p>
-
-<pre><code>t4@malachi:parent $ rebar check-config key=foo
+config key 'foo' found (get): "baz"
+config key 'foo' found (get_all): ["baz","bar"]
 ==&gt; parent (check-config)
 config key 'foo' found (get_local): "bar"
-==&gt; child (check-config)
-config key 'foo' not found (get_local)
 config key 'foo' found (get): "bar"
 config key 'foo' found (get_all): ["bar"]
+t4@malachi:parent $ rebar check-config key=squish
+==&gt; child (check-config)
+config key 'squish' not found (get_local)
+config key 'squish' found (get): "thingumy"
+config key 'squish' found (get_all): ["thingumy"]
+==&gt; parent (check-config)
+config key 'squish' found (get_local): "thingumy"
+config key 'squish' found (get): "thingumy"
+config key 'squish' found (get_all): ["thingumy"]
 t4@malachi:parent $
 </code></pre>
 
-<p>So as we can see, the consumer has a lot of control over the scope from which
-configuration sections should be taken.</p>
+<p>So as we can see, the consumer has a lot of control over the scope at which
+configuration sections should be read from. For the key <code>foo</code>, defined in both
+the parent and child directories, we see that both <code>get_local</code> and <code>get</code> will
+stop searching once the key is found and therefore terminate with the config
+section defined by the child - in this manner, the <code>rebar.config</code> in the child
+sub-directory is overriding the value of <code>foo</code> defined in the parent config.
+For the <code>squish</code> key however, we see that <code>get_local</code> fails to locate any
+value for the key, whilst get continues it&#8217;s search into the parent config and
+locates the right value.</p>
+
+<h2>Using Command Hooks</h2>
+
+<p>We want our plugin to do its work <em>before</em> rebar&#8217;s internal dependency handling
+mechanism starts working. As a result, we need to hook into <code>get-deps</code>, and for
+this we will need a <em>pre-hook</em>. These are nothing more than exported functions
+which have the prefix <code>pre_</code> in front of the command name - in our case making
+for the rather odd looking export <code>pre_get-deps</code>.</p>
+
+<p>The fetching code is fairly simple, calculating the correct target directory
+and delegating to the shell to do the work.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">bad_deps_plugin</span><span class="p">).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">&#39;pre_get-deps&#39;</span><span class="o">/</span><span class="mi">2</span><span class="p">]).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">&#39;pre_get-deps&#39;</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="p">[</span> <span class="n">pre_load</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Dep</span> <span class="o">&lt;-</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_local</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">bad_deps</span><span class="p">,</span> <span class="p">[])</span> <span class="p">],</span>
+</span><span class='line'>    <span class="n">ok</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">pre_load</span><span class="p">({</span><span class="nv">Dep</span><span class="p">,</span> <span class="nv">Url</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nv">DepsDir</span> <span class="o">=</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">(</span><span class="n">deps_dir</span><span class="p">,</span> <span class="s">&quot;deps&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">TargetDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">DepsDir</span><span class="p">,</span> <span class="nb">atom_to_list</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)),</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_dir</span><span class="p">(</span><span class="nv">TargetDir</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="c">%% we&#39;ve already fetched this one</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">sh</span><span class="p">(</span><span class="s">&quot;git clone &quot;</span> <span class="o">++</span> <span class="nv">Url</span><span class="p">,</span> <span class="p">[{</span><span class="n">cd</span><span class="p">,</span> <span class="nv">DepsDir</span><span class="p">}])</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now in the sample project that is using this plugin, we need to fetch it from
+github. Because <em>one</em> of our dependencies - that is, the skewbinheap library -
+isn&#8217;t compatible with rebar, if we put both the plugin and the <em>broken</em> dep
+into our config and run <code>rebar get-deps compile</code>, we <em>do</em> see the plugin get
+fetched and built, <em>but</em> we end up with a non-zero exit code. Personally I see
+that as an indication that the build has failed, rather than a <em>normal</em> step
+of the build process. I think this is especially important in this day and age
+where tools like CI servers will report a broken build and of course you can&#8217;t
+pipe failing shell commands or join them with <code>&amp;&amp;</code> and the like.</p>
+
+<p>Instead, we&#8217;ll configure the plugin as a dependency by itself in a separate
+config file, and fetch and build it by itself first. After the plugin has been
+successfully built, we can use it to bootstrap <code>skewbinheap</code> properly for us.
+By convention, I like to name rebar config files that are used for bootstrap or
+initialisation by their task.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% init.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">bad_deps_plugin</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;git://github.com/hyperthunk/rebar-plugin-tutorial.git&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;part3-plugin&quot;</span><span class="p">}}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar -C init.config get-deps compile
+==&gt; rebar-plugin-tutorial (get-deps)
+Pulling bad_deps_plugin from {git,"git://github.com/hyperthunk/rebar-plugin-tutorial.git",
+                                  "part3-plugin"}
+Initialized empty Git repository in /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/bad_deps_plugin/.git/
+Branch part3-plugin set up to track remote branch part3-plugin from origin.
+==&gt; bad_deps_plugin (get-deps)
+==&gt; bad_deps_plugin (compile)
+Compiled src/bad_deps_plugin.erl
+==&gt; rebar-plugin-tutorial (compile)
+t4@malachi:rebar-plugin-tutorial $
+</code></pre>
+
+<p>Now that the dependency is installed, we can do a test run to see if our git
+command is working as expected. First the main <code>rebar.config</code> needs updating,
+because <em>it</em> needs to know about the plugin dependency in order for the plugin
+to get added to the code path before the <code>get-deps</code> command is executed.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% tell rebar that we&#39;re using this plugin</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">bad_deps_plugin</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="c">%% make sure that rebar puts bad_deps_plugin on the code path for each cmd</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">bad_deps_plugin</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">bad_deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;https://github.com/okeuday/skewbinheap.git&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we run <code>get-deps</code> we can see clearly that our <code>git clone</code> command has
+indeed worked, because the directory is present. What&#8217;s interesting to note
+here is that <code>get-deps</code> will not return a non-zero exit status even when the
+<code>skewbinheap</code> dependency isn&#8217;t structured properly as an OTP application. The
+<code>compile</code> command however, will fail in this manner.</p>
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar get-deps
+==&gt; bad_deps_plugin (pre_get-deps)
+==&gt; bad_deps_plugin (get-deps)
+==&gt; rebar-plugin-tutorial (pre_get-deps)
+Initialized empty Git repository in /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/skewbinheap/.git/
+==&gt; rebar-plugin-tutorial (get-deps)
+t4@malachi:rebar-plugin-tutorial $ ls deps/
+bad_deps_plugin skewbinheap
+t4@malachi:rebar-plugin-tutorial $ echo $?
+0
+t4@malachi:rebar-plugin-tutorial $ rebar compile
+==&gt; bad_deps_plugin (compile)
+==&gt; rebar-plugin-tutorial (compile)
+Dependency not available: skewbinheap-.* (undefined)
+t4@malachi:rebar-plugin-tutorial $ echo $?
+1
+t4@malachi:rebar-plugin-tutorial $
+</code></pre>
+
+<p>Now the other thing to note is that the <code>pre_get-deps</code> command is running for
+each of the dependencies as well as the top level project. We&#8217;ve come across
+this aspect of rebars build lifecycle before (in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>) and we can
+either make the user <code>skip_deps</code> or we can handle the edge case in the plugin.
+There is an argument <em>for</em> letting a dependency handling command/plugin
+continue to process directories recursively, but in practise we&#8217;ll see that
+this doesn&#8217;t work without significant coding on the part of the plugin author.</p>
+
+<p>For now, we&#8217;re just going to exclude anything outside of <code>base_dir</code> as we did
+in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>. To avoid writing all the tedious <code>case is_base_dir()</code>
+boilerplate everywhere, we&#8217;re going to utilise an <a href="https://github.com/hyperthunk/annotations">annotation</a>
+that I&#8217;ve written in to a little library, which will do the work for us. This
+also gives us an opportunity to look at how plugins with their own dependencies
+need to be handled when they&#8217;re included in a project.</p>
+
+<p>Back in the <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">part3-plugin branch</a>, we&#8217;ll switch over to use the
+<a href="https://github.com/hyperthunk/annotations">annotation</a>. First the rebar build config needs tweaking so that
+we get hold of the two libraries we&#8217;re going to be using (there are links to
+both of them at the bottom of the page).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% rebar.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">,</span> <span class="s">&quot;deps/parse_trans&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;deps/annotations&quot;</span><span class="p">,</span> <span class="s">&quot;deps/rebar_annotations&quot;</span><span class="p">]}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">rebar_annotations</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;https://github.com/hyperthunk/rebar_annotations.git&quot;</span><span class="p">}}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">rebar_annotations_plugin</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">annotations</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">registered</span><span class="p">,</span> <span class="p">[</span><span class="n">base_dir</span><span class="p">]}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now we can simply use the <code>-base_dir</code> annotation anywhere in our code.
+We&#8217;re going to apply it to the <code>pre_get-deps/2</code> function to ensure that it does
+not run for sub_dirs or dependencies.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">bad_deps_plugin</span><span class="p">).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">&#39;pre_get-deps&#39;</span><span class="o">/</span><span class="mi">2</span><span class="p">]).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">include_lib</span><span class="p">(</span><span class="s">&quot;annotations/include/annotations.hrl&quot;</span><span class="p">).</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">-</span><span class="ni">base_dir</span><span class="p">(</span><span class="n">only</span><span class="p">).</span>
+</span><span class='line'><span class="nf">&#39;pre_get-deps&#39;</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="p">[</span> <span class="n">pre_load</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Dep</span> <span class="o">&lt;-</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_local</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">bad_deps</span><span class="p">,</span> <span class="p">[])</span> <span class="p">],</span>
+</span><span class='line'>    <span class="n">ok</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">pre_load</span><span class="p">({</span><span class="nv">Dep</span><span class="p">,</span> <span class="nv">Url</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nv">DepsDir</span> <span class="o">=</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">(</span><span class="n">deps_dir</span><span class="p">,</span> <span class="s">&quot;deps&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">TargetDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">DepsDir</span><span class="p">,</span> <span class="nb">atom_to_list</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)),</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_dir</span><span class="p">(</span><span class="nv">TargetDir</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="c">%% we&#39;ve already fetched this one</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">sh</span><span class="p">(</span><span class="s">&quot;git clone &quot;</span> <span class="o">++</span> <span class="nv">Url</span><span class="p">,</span> <span class="p">[{</span><span class="n">cd</span><span class="p">,</span> <span class="nv">DepsDir</span><span class="p">}])</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In order to compile the plugin with <a href="https://github.com/hyperthunk/annotations">annotations</a> support enabled,
+we need to update the <code>init.config</code> to meet the following requirements:</p>
+
+<ol>
+<li>The libraries used during the <em>parse transform</em> phase need to be on the code path</li>
+<li>The rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin needs to be somewhere rebar can find it</li>
+</ol>
+
+
+<p>Putting the rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin on the path doesn&#8217;t work,
+due to the build lifecycle order. It is <em>possible</em> to configure the plugin to
+be on the code path during the build, but requires multiple passes in order to
+work properly and as you&#8217;ve probably noticed, I&#8217;m <strong>not</strong> keen on the idea of
+forcing users to do this. We continue to use rebar&#8217;s <code>lib_dirs</code> configuration
+section (which modifies the code path) to make sure that the required modules
+are available during the compile phase. For locating the
+rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin however, we bootstrap the <code>plugin_dir</code>
+to point to <code>deps/annotations/src</code>, which works nicely.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% init.config</span>
+</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;deps/parse_trans&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;deps/annotations&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;deps/rebar_annotations&quot;</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">plugin_dir</span><span class="p">,</span> <span class="s">&quot;deps/annotations/src&quot;</span><span class="p">}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">rebar_annotations_plugin</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">bad_deps_plugin</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;git://github.com/hyperthunk/rebar-plugin-tutorial.git&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s">&quot;part3-plugin&quot;</span><span class="p">}}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notice that we&#8217;re configuring <code>lib_dirs</code> to point to three libraries here. This
+has to do with the way rebar sets up the code path prior to compile. Before any
+command is run, the <code>rebar_deps</code> module will iterate of the <em>declared</em>
+dependencies for the current directory and add them all to the code path.
+Unfortunately for us - although this behaviour <em>may</em> be by design - rebar does
+not do anything to add <em>transitive</em> dependencies to the code path. When we use
+our <code>init.config</code> to bootstrap the plugin we want to use, we need the
+<a href="https://github.com/hyperthunk/annotations">annotations</a> library on the path, which in turn requires both
+the <a href="https://github.com/hyperthunk/rebar_annotations">rebar annotations plugin support library</a> and the
+<a href="https://github.com/esl/parse_trans">parse_trans</a> library as well. These libraries are transitive
+dependencies of the <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">plugin</a>, so we don&#8217;t <em>need</em> to declare them
+in our <code>init.config</code> but if we do not, we must use <code>lib_dirs</code> to get them on
+the code path.</p>
+
+<p>Now that we&#8217;ve dealt with getting the transitive dependencies onto the path,
+we are in a position where the plugin will kick in and do its work in
+<code>base_dir</code> only. Our build process is now two-phase, but in a later article,
+we will look at how we can combine these phases into a single command.</p>
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar -C init.config get-deps compile
+t4@malachi:rebar-plugin-tutorial $ rebar get-deps compile
+</code></pre>
+
+<h2>Fixing the directory structure</h2>
+
+<p>Now it&#8217;s time to move the files around. We&#8217;re going to provide some additional
+configuration in the <code>bad_deps</code> section, to specify which files are considered
+<em>production</em> code and which are test. There is another useful method in
+<code>rebar_utils</code> which finds files recursively based on a regular expression and
+we&#8217;ll delegate to this for moving stuff around. Let&#8217;s take a look at the new
+<code>bad_deps</code> configuration section then.</p>
+
+<p>We won&#8217;t worry about handling <code>.yrl</code> or <code>.mib</code> files (or any other custom file
+formats such as erlydtl templates) as our target library doesn&#8217;t have any.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">{</span><span class="n">bad_deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">skewbinheap</span><span class="p">,</span> <span class="s">&quot;https://github.com/okeuday/skewbinheap.git&quot;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">src_main</span><span class="p">,</span> <span class="s">&quot;^.*(?&lt;!_eqc|_prop|_proper|_test|_tests)</span><span class="se">\\</span><span class="s">.erl</span><span class="err">\</span><span class="s">$&quot;</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">src_test</span><span class="p">,</span> <span class="s">&quot;^.*(_eqc|_prop(er)?|_test(s)?)</span><span class="se">\\</span><span class="s">.erl</span><span class="err">\</span><span class="s">$&quot;</span><span class="p">}</span>
+</span><span class='line'>    <span class="p">]}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code to handle these regular expressions is fairly noddy, simply delegating
+to <code>rebar_utils</code> to do most of the real work. We also need to generate an
+<code>.app.src</code> file in the right place, so that rebar recognises the project as an
+OTP library.</p>
+
+<p>The full plugin code is listed below. As well as the <code>find_files</code> function,
+we&#8217;re also using another <code>rebar_file_utils</code> function to shuffle the sources
+into the right place.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">bad_deps_plugin</span><span class="p">).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">&#39;pre_get-deps&#39;</span><span class="o">/</span><span class="mi">2</span><span class="p">]).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">include_lib</span><span class="p">(</span><span class="s">&quot;annotations/include/annotations.hrl&quot;</span><span class="p">).</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">-</span><span class="ni">base_dir</span><span class="p">(</span><span class="n">only</span><span class="p">).</span>
+</span><span class='line'><span class="nf">&#39;pre_get-deps&#39;</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_</span><span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">debug</span><span class="p">,</span> <span class="s">&quot;pre_get-deps running in </span><span class="si">~s~n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">[</span><span class="nn">rebar_utils</span><span class="p">:</span><span class="n">get_cwd</span><span class="p">()]),</span>
+</span><span class='line'>    <span class="p">[</span> <span class="n">pre_load</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Dep</span> <span class="o">&lt;-</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_local</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">bad_deps</span><span class="p">,</span> <span class="p">[])</span> <span class="p">],</span>
+</span><span class='line'>    <span class="n">ok</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">pre_load</span><span class="p">({</span><span class="nv">Dep</span><span class="p">,</span> <span class="nv">Url</span><span class="p">,</span> <span class="nv">Config</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nv">DepsDir</span> <span class="o">=</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">(</span><span class="n">deps_dir</span><span class="p">,</span> <span class="s">&quot;deps&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">Project</span> <span class="o">=</span> <span class="nb">atom_to_list</span><span class="p">(</span><span class="nv">Dep</span><span class="p">),</span>
+</span><span class='line'>    <span class="nv">TargetDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">DepsDir</span><span class="p">,</span> <span class="nv">Project</span><span class="p">),</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">filelib</span><span class="p">:</span><span class="n">is_dir</span><span class="p">(</span><span class="nv">TargetDir</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="c">%% we&#39;ve already fetched this one</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">sh</span><span class="p">(</span><span class="s">&quot;git clone &quot;</span> <span class="o">++</span> <span class="nv">Url</span><span class="p">,</span> <span class="p">[{</span><span class="n">cd</span><span class="p">,</span> <span class="nv">DepsDir</span><span class="p">}]),</span>
+</span><span class='line'>            <span class="nv">ProjectDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">([</span><span class="nn">rebar_utils</span><span class="p">:</span><span class="n">get_cwd</span><span class="p">(),</span>
+</span><span class='line'>                                        <span class="nv">DepsDir</span><span class="p">,</span> <span class="nv">Project</span><span class="p">]),</span>
+</span><span class='line'>            <span class="nv">SrcDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="s">&quot;src&quot;</span><span class="p">),</span>
+</span><span class='line'>            <span class="nv">TestDir</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">([</span><span class="nn">rebar_utils</span><span class="p">:</span><span class="n">get_cwd</span><span class="p">(),</span>
+</span><span class='line'>                                     <span class="nv">DepsDir</span><span class="p">,</span> <span class="nv">Project</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">]),</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">ensure_dir</span><span class="p">(</span><span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">SrcDir</span><span class="p">,</span> <span class="s">&quot;foo.txt&quot;</span><span class="p">)),</span>
+</span><span class='line'>            <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">ensure_dir</span><span class="p">(</span><span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">TestDir</span><span class="p">,</span> <span class="s">&quot;foo.txt&quot;</span><span class="p">)),</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">generate_app_file</span><span class="p">(</span><span class="nv">Project</span><span class="p">,</span> <span class="nv">ProjectDir</span><span class="p">),</span>
+</span><span class='line'>            <span class="nv">SrcPattern</span> <span class="o">=</span> <span class="nn">proplists</span><span class="p">:</span><span class="n">get_value</span><span class="p">(</span><span class="n">src_main</span><span class="p">,</span> <span class="nv">Config</span><span class="p">,</span> <span class="s">&quot;^.*</span><span class="se">\\</span><span class="s">.erl</span><span class="err">\</span><span class="s">$&quot;</span><span class="p">),</span>
+</span><span class='line'>            <span class="nv">TestPattern</span> <span class="o">=</span> <span class="nn">proplists</span><span class="p">:</span><span class="n">get_value</span><span class="p">(</span><span class="n">src_test</span><span class="p">,</span>
+</span><span class='line'>                                              <span class="nv">Config</span><span class="p">,</span> <span class="s">&quot;^.*_tests</span><span class="se">\\</span><span class="s">.erl</span><span class="err">\</span><span class="s">$&quot;</span><span class="p">),</span>
+</span><span class='line'>            <span class="p">[</span> <span class="n">mv</span><span class="p">(</span><span class="nv">Src</span><span class="p">,</span> <span class="nv">SrcDir</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Src</span> <span class="o">&lt;-</span> <span class="n">find</span><span class="p">(</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="nv">SrcPattern</span><span class="p">)],</span>
+</span><span class='line'>            <span class="p">[</span> <span class="n">mv</span><span class="p">(</span><span class="nv">Src</span><span class="p">,</span> <span class="nv">TestDir</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Src</span> <span class="o">&lt;-</span> <span class="n">find</span><span class="p">(</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="nv">TestPattern</span><span class="p">)]</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">generate_app_file</span><span class="p">(</span><span class="nv">Project</span><span class="p">,</span> <span class="nv">ProjectDir</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nv">Target</span> <span class="o">=</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">([</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="s">&quot;src&quot;</span><span class="p">,</span> <span class="nv">Project</span> <span class="o">++</span> <span class="s">&quot;.app.src&quot;</span><span class="p">]),</span>
+</span><span class='line'>    <span class="nn">file</span><span class="p">:</span><span class="n">write_file</span><span class="p">(</span><span class="nv">Target</span><span class="p">,</span> <span class="n">app</span><span class="p">(</span><span class="nv">Project</span><span class="p">),</span> <span class="p">[</span><span class="n">write</span><span class="p">]).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">app</span><span class="p">(</span><span class="nv">Project</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nv">App</span> <span class="o">=</span> <span class="p">{</span><span class="n">application</span><span class="p">,</span> <span class="nb">list_to_atom</span><span class="p">(</span><span class="nv">Project</span><span class="p">),</span>
+</span><span class='line'>           <span class="p">[{</span><span class="n">description</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">vsn</span><span class="p">,</span> <span class="s">&quot;1&quot;</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">applications</span><span class="p">,</span> <span class="p">[</span><span class="n">kernel</span><span class="p">,</span> <span class="n">stdlib</span><span class="p">]}]},</span>
+</span><span class='line'>    <span class="nn">io_lib</span><span class="p">:</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;</span><span class="si">~p</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">App</span><span class="p">]).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">find</span><span class="p">(</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="nv">SrcPattern</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">find_files</span><span class="p">(</span><span class="nv">ProjectDir</span><span class="p">,</span> <span class="nv">SrcPattern</span><span class="p">).</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">mv</span><span class="p">(</span><span class="nv">Src</span><span class="p">,</span> <span class="nv">SrcDir</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">rebar_file_utils</span><span class="p">:</span><span class="n">mv</span><span class="p">(</span><span class="nv">Src</span><span class="p">,</span> <span class="nn">filename</span><span class="p">:</span><span class="n">join</span><span class="p">(</span><span class="nv">Src</span><span class="p">,</span> <span class="nv">SrcDir</span><span class="p">))</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">ok</span> <span class="o">-&gt;</span> <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">}</span> <span class="o">-&gt;</span> <span class="nn">rebar_utils</span><span class="p">:</span><span class="n">abort</span><span class="p">(</span><span class="nv">Reason</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Most of the (verbose) output has been snipped from the shell session listed
+below, but the relevant bits are there and the plugin is clearly doing its job
+properly.</p>
+
+<pre><code>t4@malachi:rebar-plugin-tutorial $ rebar get-deps -v
+# &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; LOTS OF OUTPUT SNIPPED! &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+==&gt; rebar-plugin-tutorial (get-deps)
+DEBUG: is_app_available, looking for App annotations with Path "/Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/annotations"
+DEBUG: vcs_vsn: Unknown VCS atom in vsn field: "0.0.1"
+INFO:  Looking for annotations-.* ; found annotations-0.0.1 at /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/annotations
+DEBUG: is_app_available, looking for App rebar_annotations with Path "/Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/rebar_annotations"
+DEBUG: vcs_vsn: Unknown VCS atom in vsn field: "1"
+INFO:  Looking for rebar_annotations-.* ; found rebar_annotations-1 at /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/rebar_annotations
+DEBUG: is_app_available, looking for App bad_deps_plugin with Path "/Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/bad_deps_plugin"
+DEBUG: vcs_vsn: Unknown VCS atom in vsn field: "1"
+INFO:  Looking for bad_deps_plugin-.* ; found bad_deps_plugin-1 at /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/bad_deps_plugin
+DEBUG: is_app_available, looking for App skewbinheap with Path "/Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/skewbinheap"
+DEBUG: vcs_vsn: Unknown VCS atom in vsn field: "1"
+INFO:  Looking for skewbinheap-.* ; found skewbinheap-1 at /Users/t4/work/hyperthunk/rebar-plugin-tutorial/deps/skewbinheap
+DEBUG: Postdirs: []
+t4@malachi:rebar-plugin-tutorial $ ls -la deps/skewbinheap/
+total 24
+drwxr-xr-x   7 t4  staff   238  6 Jan 11:42 .
+drwxr-xr-x   8 t4  staff   272  6 Jan 11:42 ..
+drwxr-xr-x  13 t4  staff   442  6 Jan 11:42 .git
+-rw-r--r--   1 t4  staff    58  6 Jan 11:42 .gitignore
+-rw-r--r--   1 t4  staff   737  6 Jan 11:42 README.markdown
+drwxr-xr-x   4 t4  staff   136  6 Jan 11:42 src
+-rw-r--r--   1 t4  staff  1602  6 Jan 11:42 test
+t4@malachi:rebar-plugin-tutorial $ ls -la deps/skewbinheap/src/
+total 16
+drwxr-xr-x  4 t4  staff   136  6 Jan 11:42 .
+drwxr-xr-x  7 t4  staff   238  6 Jan 11:42 ..
+-rw-r--r--  1 t4  staff   101  6 Jan 11:42 skewbinheap.app.src
+-rw-r--r--  1 t4  staff  3781  6 Jan 11:42 skewbinheap.erl
+t4@malachi:rebar-plugin-tutorial $ 
+</code></pre>
+
+<h2>Conclusion</h2>
+
+<p>We&#8217;ve developed a useful little plugin here. In general, forking repositories
+is made very easy by modern dvcs tools, so the fork/clone-and-maintain approach
+is probably a better way to deal with aberrant project structures like this
+one.</p>
+
+<p>A more general problem occurs when building foreign dependencies, some of
+which may not be compatible with rebar, may use another build system (such as
+make) or may even not contain Erlang sources at all! When dealing with these
+situations, I would recommend looking at the
+<a href="https://github.com/hyperthunk/rebar_alien_plugin">rebar_alien_plugin</a>, which attempts to provide a framework
+for handling them. We will introduce that plugin in detail later on in the
+series, as it is effectively a configuration driven plugin compiler.</p>
+
+<h2>Next time&#8230;</h2>
+
+<p>We&#8217;ll continue next time by looking at the <code>preprocess</code> and <code>postprocess</code> hooks
+and will introduce a new (and useful) working plugin. We will also introduce
+the Rebar Plugin Manager project, which provides hooks to compensate for many
+of the complexities we&#8217;ve encountered with getting the code path set up
+correctly so that plugins are available.</p>
 
 <h2>Links</h2>
 
@@ -338,10 +875,12 @@ configuration sections should be taken.</p>
 
 <ol>
 <li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial">main source code repository</a></li>
-<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging">branch containing the sample plugin code</a></li>
-<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/plugin-packaging-consumer">branch containing the sample project</a></li>
+<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">branch containing the sample plugin code</a></li>
+<li><a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-project">branch containing the sample project</a></li>
 <li><a href="https://github.com/hyperthunk/annotations">annotations library</a></li>
 <li><a href="https://github.com/hyperthunk/rebar_annotations">rebar annotations plugin support library</a></li>
+<li><a href="https://github.com/esl/parse_trans">Erlang Solutions&#8217; parse_trans library</a></li>
+<li><a href="https://github.com/hyperthunk/rebar_alien_plugin">rebar_alien_plugin</a></li>
 </ol>
 
 
