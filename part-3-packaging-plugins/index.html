@@ -524,10 +524,8 @@ both of them at the bottom of the page).</p>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
 <span class='line-number'>12</span>
-<span class='line-number'>13</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% rebar.config</span>
-</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">,</span> <span class="s">&quot;deps/parse_trans&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&quot;deps/annotations&quot;</span><span class="p">,</span> <span class="s">&quot;deps/rebar_annotations&quot;</span><span class="p">]}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">]}.</span>
 </span><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
 </span><span class='line'>    <span class="p">{</span><span class="n">rebar_annotations</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
 </span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;https://github.com/hyperthunk/rebar_annotations.git&quot;</span><span class="p">}}</span>
@@ -595,15 +593,9 @@ we need to update the <code>init.config</code> to meet the following requirement
 </ol>
 
 
-<p>Putting the rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin on the path doesn&#8217;t work,
-due to the build lifecycle order. It is <em>possible</em> to configure the plugin to
-be on the code path during the build, but requires multiple passes in order to
-work properly and as you&#8217;ve probably noticed, I&#8217;m <strong>not</strong> keen on the idea of
-forcing users to do this. We continue to use rebar&#8217;s <code>lib_dirs</code> configuration
-section (which modifies the code path) to make sure that the required modules
-are available during the compile phase. For locating the
-rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin however, we bootstrap the <code>plugin_dir</code>
-to point to <code>deps/annotations/src</code>, which works nicely.</p>
+<p>In order to locate the rebar <a href="https://github.com/hyperthunk/annotations">annotations</a> plugin at runtime, we
+bootstrap the <code>plugin_dir</code> to point to <code>deps/annotations/src</code>, which works
+nicely when you&#8217;ve got a single plugin build.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -616,14 +608,8 @@ to point to <code>deps/annotations/src</code>, which works nicely.</p>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% init.config</span>
-</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&quot;deps/parse_trans&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&quot;deps/annotations&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&quot;deps/rebar_annotations&quot;</span><span class="p">]}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">lib_dirs</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;deps&quot;</span><span class="p">]}.</span>
 </span><span class='line'>
 </span><span class='line'><span class="p">{</span><span class="n">plugin_dir</span><span class="p">,</span> <span class="s">&quot;deps/annotations/src&quot;</span><span class="p">}.</span>
 </span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">rebar_annotations_plugin</span><span class="p">]}.</span>
@@ -636,21 +622,9 @@ to point to <code>deps/annotations/src</code>, which works nicely.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Notice that we&#8217;re configuring <code>lib_dirs</code> to point to three libraries here. This
-has to do with the way rebar sets up the code path prior to compile. Before any
-command is run, the <code>rebar_deps</code> module will iterate of the <em>declared</em>
-dependencies for the current directory and add them all to the code path.
-Unfortunately for us - although this behaviour <em>may</em> be by design - rebar does
-not do anything to add <em>transitive</em> dependencies to the code path. When we use
-our <code>init.config</code> to bootstrap the plugin we want to use, we need the
-<a href="https://github.com/hyperthunk/annotations">annotations</a> library on the path, which in turn requires both
-the <a href="https://github.com/hyperthunk/rebar_annotations">rebar annotations plugin support library</a> and the
-<a href="https://github.com/esl/parse_trans">parse_trans</a> library as well. These libraries are transitive
-dependencies of the <a href="https://github.com/hyperthunk/rebar-plugin-tutorial/tree/part3-plugin">plugin</a>, so we don&#8217;t <em>need</em> to declare them
-in our <code>init.config</code> but if we do not, we must use <code>lib_dirs</code> to get them on
-the code path.</p>
-
-<p>Now that we&#8217;ve dealt with getting the transitive dependencies onto the path,
+<p>Notice that we&#8217;re configuring <code>lib_dirs</code> to point to the <code>deps</code> directory here.
+This is required so that the OTP <code>compile</code> module can decode the <code>include_lib</code>
+references. Now that we&#8217;ve dealt with getting the <code>lib_dirs</code> on the code path,
 we are in a position where the plugin will kick in and do its work in
 <code>base_dir</code> only. Our build process is now two-phase, but in a later article,
 we will look at how we can combine these phases into a single command.</p>

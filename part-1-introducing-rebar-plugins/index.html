@@ -279,16 +279,13 @@ plugins because they’re in the <code>{plugins, ListOfPlugins}</code>
 configuration section,  but in practise things aren’t quite that simple. In
 order for a plugin to actually get executed (in response to a specific command,
 it’s pre/post hooks or indeed the special preprocess and postprocess commands),
-it needs to be on the code path! This is fine if the plugin is installed
-globally into the user’s erl environment (for example by putting it’s
-application root directory somewhere on the ERL_LIBS environment variable), but
-not so fine if you’re fetching it into the project’s dependencies. If the
-dependency is a direct one, then the <code>preprocess</code> handler in rebar_deps will
-nicely update the code path for all commands, so as long as you’re not trying
-to make the plugin run before rebar’s built-in modules (which is, in fact,
-impossible) then it’ll be on the path. This once again doesn’t always work in
-practise, because the function that builds up the code path makes no
-attempt to deal with transitive dependencies..</p>
+it needs to be on the code path! The plugin can be installed globally into the
+user’s erl environment (for example by putting it’s application root directory
+somewhere on the ERL_LIBS environment variable), or by fetching it into the
+project’s dependencies. In this (latter) case, you need to ensure that the beam
+file(s) for your plugin have been generated (by compiling the plugin) and been
+added to the code path <em>in time</em> for your plugin&#8217;s functionality to be
+available at runtime.</p>
 
 <h3>Local Plugins</h3>
 
