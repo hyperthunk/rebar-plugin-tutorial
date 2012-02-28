@@ -86,12 +86,11 @@ common use cases: &hellip;">
   <p>So far we&#8217;ve looked at the structure of rebar plugins, concentrating on the
 common use cases: adding a new command and/or hooking into existing ones. In
 this instalment, we will take a view of some of the more extreme kinds of
-customisation that can be achieved.</p>
+customisation we can achieve.</p>
 
-<p>We will be focussing exclusively on an an existing plugin, so there are no
-specific sources to download apart from the additional libraries, links to
-which to which will be provided both in the text, and in the final <em>links</em>
-section.</p>
+<p>We will focuss exclusively on an existing plugin, so there are no specific
+sources to download apart from the additional libraries, links to which will
+be provided both in the text, and in the final <em>links</em> section.</p>
 
 <h2>More Caveats Than Usual</h2>
 
@@ -101,7 +100,7 @@ plugins are based on <em>internal</em> rebar functionality that could change at 
 time! As rebar has no official API for plugins to rely on, this is always the
 case right now anyway. Nonetheless, if you build plugins using the kind of
 <em>inner guts</em> API calls that we will use today, you should be aware that future
-rebar releases may well cause you rework in the future.</p>
+rebar releases may well cause you some rework headaches.</p>
 
 <h2>Introducing the <em>Build Lifecycle</em></h2>
 
@@ -164,8 +163,9 @@ to do this with the following</p>
 
 <p>The implementation code for today&#8217;s article is already written and you can
 access it from github <a href="https://github.com/hyperthunk/rebar_phase_plugin">here</a>, using git or via the
-downloads page. I&#8217;d recommend using the latest commit, as the plugin is still
-in active development and subject to change.</p>
+downloads page.</p>
+
+<hr />
 
 <h2>From Configuration to Commands</h2>
 
@@ -175,14 +175,13 @@ phases should be called or which (existing) rebar commands are bound to them,
 nor should we dictate the order in which the lifecycle phases are executed
 (viz. the dependencies between them).</p>
 
-<p>How then, can go from user defined configuration settings to new commands?
+<p>How then, can we go from user defined configuration settings to new commands?
 The answer to this is rather subversive: we will generate new functions on the
 fly and make them available to rebar!</p>
 
 <p>For those who&#8217;ve joined the series late, let&#8217;s go over how rebar maps a
-command to an implementation module/function at runtime.</p>
-
-<p>For any given command, understands the command if (and only if)
+command to an implementation module/function at runtime. For any given
+command, rebar will understand the command if (and only if)
 <em>one of the modules it knows about</em> exports a function with a signature that:</p>
 
 <ul>
@@ -216,9 +215,9 @@ open source community) that do this, but we can do one better.</p>
 APIs for working with plugins, one of which is <code>generate_handler/3</code>. As the
 name suggests, this code generates a command handling function for us, saving
 us from doing any of the hard work. Not only is it useful to avoid reinventing
-the wheel here, the implementation which is provided, deals with various edge
-cases such as when we&#8217;re being run from within an escript and/or being code
-that is not.</p>
+the wheel here, but the implementation provided also deals with various edge
+cases such as when we&#8217;re being run from within an escript and/or being called
+by code that might not be.</p>
 
 <p>The API for <code>generate_handler/3</code> looks like this:</p>
 
@@ -257,9 +256,8 @@ originating module. Although it isn&#8217;t abundantly clear from the type spec,
 return value of this function is the module to which the new command handling
 functions have been added.</p>
 
-<p>Now there is a requirement that the originating module (i.e., the source of
-the command specifications) should export a function with the following
-signature:</p>
+<p>Now there is a requirement that the originating module (i.e., the caller)
+should export a function with the following signature:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -290,15 +288,16 @@ them, then we need to start using the <code>preprocess/2</code> hook. If exporte
 function is called in much the same way as <em>command-functions</em>, but has
 slightly different semantics.</p>
 
-<p>In the current incarnation of rebar, the return value is expected to be either
-<code>{ok, Predirs::list(string())}</code> or an error tuple. The second element is used
-to indicate to rebar that there are directories which require processing
+<p>In the current incarnation of rebar, unlike standard command handling
+functions, the return value of <code>preprocess/2</code> is expected to be either
+<code>{ok, Predirs::list(string())}</code> or an error tuple. In the success case, the
+second element is used to indicate to rebar that there are directories which require processing
 <em>before</em> this one - this is the mechanism that rebar&#8217;s <code>sub_dirs</code> and <code>deps</code>
 functionality uses. It is also possible that this approach (to handling both
 sub-directory processing and pre-processing of all commands) may change in
 the future. Whilst writing custom commands and/or command hooks is fairly well
-supported now, despite the lack of an official API, use of the <code>preprocess/2</code>
-hook is a bit more volatile and should be undertaken with this in mind.</p>
+supported now (despite the lack of an official API), using the <code>preprocess/2</code> hook
+is probably a bit more volatile and should be undertaken with this in mind.</p>
 
 <p>Now all the whining caveats are out of the way, let&#8217;s look at how our own
 implementation of <code>preprocess/2</code> will look inside of the
@@ -372,18 +371,8 @@ friend <code>rebar_config</code>:</p>
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
 </pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">commands</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="n">load_phases</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="k">of</span>
-</span><span class='line'>        <span class="p">[]</span> <span class="o">-&gt;</span>
-</span><span class='line'>            <span class="p">[];</span>
-</span><span class='line'>        <span class="nv">Phases</span> <span class="k">when</span> <span class="nb">is_list</span><span class="p">(</span><span class="nv">Phases</span><span class="p">)</span> <span class="o">-&gt;</span>
-</span><span class='line'>            <span class="p">[</span> <span class="n">generate_command</span><span class="p">(</span><span class="nv">Phase</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Phase</span> <span class="o">&lt;-</span> <span class="nv">Phases</span> <span class="p">]</span>
-</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>    <span class="p">[</span> <span class="n">generate_command</span><span class="p">(</span><span class="nv">Phase</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Phase</span> <span class="o">&lt;-</span> <span class="n">load_phases</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="p">].</span>
 </span><span class='line'>
 </span><span class='line'><span class="nf">load_phases</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="o">-&gt;</span>
 </span><span class='line'>    <span class="k">case</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">({</span><span class="n">phases</span><span class="p">,</span> <span class="nv">Config</span><span class="p">},</span> <span class="n">undefined</span><span class="p">)</span> <span class="k">of</span>
