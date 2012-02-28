@@ -1,0 +1,775 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>part 4 - extreme customisations - Rebar Plugins</title>
+  <meta name="author" content="Tim Watson">
+
+  
+  <meta name="description" content="Part 4 - Extreme Customisations Feb 28th, 2012 So far we&#8217;ve looked at the structure of rebar plugins, concentrating on the
+common use cases: &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-4-extreme-customisations">
+  <link href="/rebar-plugin-tutorial/favicon.png" rel="icon">
+  <link href="/rebar-plugin-tutorial/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/rebar-plugin-tutorial/javascripts/modernizr-2.0.js"></script>
+  <script src="/rebar-plugin-tutorial/javascripts/ender.js"></script>
+  <script src="/rebar-plugin-tutorial/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/rebar-plugin-tutorial/atom.xml" rel="alternate" title="Rebar Plugins" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/rebar-plugin-tutorial/">Rebar Plugins</a></h1>
+  
+    <h2>Extreme Build Customisations</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/rebar-plugin-tutorial/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:hyperthunk.github.com/rebar-plugin-tutorial" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/rebar-plugin-tutorial/">Home</a></li>
+  <li><a href="/rebar-plugin-tutorial/blog/archives">Blog Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article role="article">
+  
+  <header>
+    <h1 class="entry-title">Part 4 - Extreme Customisations</h1>
+    <p class="meta">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-28T08:32:00+00:00" pubdate data-updated="true">Feb 28<span>th</span>, 2012</time></p>
+  </header>
+  
+  <p>So far we&#8217;ve looked at the structure of rebar plugins, concentrating on the
+common use cases: adding a new command and/or hooking into existing ones. In
+this instalment, we will take a view of some of the more extreme kinds of
+customisation that can be achieved.</p>
+
+<p>We will be focussing exclusively on an an existing plugin, so there are no
+specific sources to download apart from the additional libraries, links to
+which to which will be provided both in the text, and in the final <em>links</em>
+section.</p>
+
+<h2>More Caveats Than Usual</h2>
+
+<p>Today&#8217;s whirlwind tour will take in two plugins that have become all but
+quintessential for many of my own projects. It must be noted that these
+plugins are based on <em>internal</em> rebar functionality that could change at any
+time! As rebar has no official API for plugins to rely on, this is always the
+case right now anyway. Nonetheless, if you build plugins using the kind of
+<em>inner guts</em> API calls that we will use today, you should be aware that future
+rebar releases may well cause you rework in the future.</p>
+
+<h2>Introducing the <em>Build Lifecycle</em></h2>
+
+<p>Rebar&#8217;s usage is predicated on a simple model of user issued <em>commands</em>. The
+user may offer one or more commands when calling rebar, and they will be
+processed in the order they&#8217;re specified on the command line. This model is
+simple to understand and to implement, which has no doubt been at least part
+of the reason for the tool&#8217;s wide adoption and the community&#8217;s seemingly
+voracious appetite for submitting patches and additional features.</p>
+
+<p>If you&#8217;re familiar with other build tools (Make, Rake, Maven, etc) then you
+may be used to one of the two other prevalent models:</p>
+
+<ol>
+<li>Dependencies between tasks</li>
+<li>Build Phases/LifeCycles</li>
+</ol>
+
+
+<p>In the latter case, Maven defines (via plugins or core components) various
+<em>goals</em> that can be executed - these are pretty much equivalent to rebar&#8217;s
+concept of commands. Maven ties these <em>goals</em> to specific <em>lifecycle phases</em>
+in such a way that the order in which a project is processed is always well
+defined.</p>
+
+<p>Tools like Make and Rake allow you to make certain tasks/commands dependant on
+one another, so we can do things like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='make'><span class='line'><span class="nf">all</span><span class="o">:</span> <span class="m">clean test</span>
+</span><span class='line'><span class="nf">clean</span><span class="o">:</span>
+</span><span class='line'>    @<span class="o">(</span>rebar clean<span class="o">)</span>
+</span><span class='line'><span class="nf">compile</span><span class="o">:</span>
+</span><span class='line'>    @<span class="o">(</span>rebar compile<span class="o">)</span>
+</span><span class='line'><span class="nf">test</span><span class="o">:</span> <span class="m">compile</span>
+</span><span class='line'>    @<span class="o">(</span>rebar eunit qc ct<span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What we are going to do today, is put both these ideas together into a rebar
+plugin, so that we can define build <em>stages</em>, attach rebar commands to them
+<strong>and</strong> create dependencies between one or more <em>stages</em> as well. We will aim
+to do this with the following</p>
+
+<ul>
+<li>a plugin that works with a stock rebar (master branch of basho/rebar)</li>
+<li>some (local) configuration in the project that sets up the &#8216;lifecycle&#8217;</li>
+</ul>
+
+
+<p>Understanding how this works will be our task for today.</p>
+
+<hr />
+
+<p>The implementation code for today&#8217;s article is already written and you can
+access it from github <a href="https://github.com/hyperthunk/rebar_phase_plugin">here</a>, using git or via the
+downloads page. I&#8217;d recommend using the latest commit, as the plugin is still
+in active development and subject to change.</p>
+
+<h2>From Configuration to Commands</h2>
+
+<p>Our &#8216;lifecycle&#8217; concept is going to require adding new lifecycle phases as
+custom rebar commands. What we don&#8217;t want to do however, is dictate what those
+phases should be called or which (existing) rebar commands are bound to them,
+nor should we dictate the order in which the lifecycle phases are executed
+(viz. the dependencies between them).</p>
+
+<p>How then, can go from user defined configuration settings to new commands?
+The answer to this is rather subversive: we will generate new functions on the
+fly and make them available to rebar!</p>
+
+<p>For those who&#8217;ve joined the series late, let&#8217;s go over how rebar maps a
+command to an implementation module/function at runtime.</p>
+
+<p>For any given command, understands the command if (and only if)
+<em>one of the modules it knows about</em> exports a function with a signature that:</p>
+
+<ul>
+<li>has the same name as the command and is of arity 2</li>
+<li>has the same name as the command but is prefixed with pre_ and is of arity 2</li>
+<li>has the same name as the command but is prefixed with post_ and is of arity 2</li>
+</ul>
+
+
+<p>There are essentially two ways that rebar knows about modules:</p>
+
+<ul>
+<li>From the rebar.app configuration file</li>
+<li>Via the plugins section of the build configuration</li>
+</ul>
+
+
+<p>So for each &#8216;phase&#8217; that the user defines in their configuration, we will need
+a module that exports a function with the <em>same name as the phase</em>. Clearly
+as our code is not &#8216;psychic&#8217; we are going to have to generate these at
+runtime.</p>
+
+<h2>Introducing <em>rebar_plugin_manager</em></h2>
+
+<p>Writing code to generate a function at runtime is surprisingly simple in
+Erlang, however we don&#8217;t have to do this because it has already been done for
+us. There are a variety of tools (both in Erlang/OTP and provided by the
+open source community) that do this, but we can do one better.</p>
+
+<p>The <a href="https://github.com/hyperthunk/rebar_plugin_manager">rebar_plugin_manager</a> project provides a few useful
+APIs for working with plugins, one of which is <code>generate_handler/3</code>. As the
+name suggests, this code generates a command handling function for us, saving
+us from doing any of the hard work. Not only is it useful to avoid reinventing
+the wheel here, the implementation which is provided, deals with various edge
+cases such as when we&#8217;re being run from within an escript and/or being code
+that is not.</p>
+
+<p>The API for <code>generate_handler/3</code> looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">type</span> <span class="n">command_name</span><span class="p">()</span> <span class="p">::</span> <span class="n">atom</span><span class="p">().</span>
+</span><span class='line'><span class="p">-</span><span class="ni">type</span> <span class="n">command_data</span><span class="p">()</span> <span class="p">::</span> <span class="n">any</span><span class="p">().</span>
+</span><span class='line'><span class="p">-</span><span class="ni">type</span> <span class="n">instruction_set</span><span class="p">()</span> <span class="p">::</span> <span class="n">list</span><span class="p">(</span><span class="n">command_data</span><span class="p">()).</span>
+</span><span class='line'><span class="p">-</span><span class="ni">type</span> <span class="n">command</span><span class="p">()</span> <span class="p">::</span> <span class="p">{</span><span class="n">&#39;command&#39;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">command_name</span><span class="p">(),</span>
+</span><span class='line'>                    <span class="n">command_data</span><span class="p">(),</span>
+</span><span class='line'>                    <span class="n">instruction_set</span><span class="p">()}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">%% and later on....</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">-</span><span class="ni">spec</span> <span class="n">generate_handler</span><span class="p">(</span><span class="nv">BaseName</span><span class="p">::</span><span class="n">string</span><span class="p">(),</span>
+</span><span class='line'>                       <span class="nv">Cmds</span><span class="p">::</span><span class="n">list</span><span class="p">(</span><span class="nn">rebar_plugin_manager</span><span class="p">:</span><span class="n">command</span><span class="p">()),</span>
+</span><span class='line'>                       <span class="nv">Origin</span><span class="p">::</span><span class="n">module</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">module</span><span class="p">().</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The function takes a <em>base name</em> (which reflects the directory base name in
+which the command is to be run), a list of &#8216;command tuples&#8217; and the
+originating module. Although it isn&#8217;t abundantly clear from the type spec, the
+return value of this function is the module to which the new command handling
+functions have been added.</p>
+
+<p>Now there is a requirement that the originating module (i.e., the source of
+the command specifications) should export a function with the following
+signature:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">spec</span> <span class="n">execute_command</span><span class="p">(</span><span class="nv">Command</span><span class="p">::</span><span class="n">atom</span><span class="p">(),</span>
+</span><span class='line'>                      <span class="nv">BaseName</span><span class="p">::</span><span class="n">string</span><span class="p">(),</span>
+</span><span class='line'>                      <span class="nv">Config</span><span class="p">::</span><span class="nn">rebar_config</span><span class="p">:</span><span class="n">config</span><span class="p">(),</span>
+</span><span class='line'>                      <span class="nv">AppFile</span><span class="p">::</span><span class="n">string</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">&#39;ok&#39;</span> <span class="p">|</span> <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="n">any</span><span class="p">()}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This works a little bit like an OTP behaviour callback. When one of the newly
+exported commands is given to rebar, it will call the implementation that has
+been generated for us by the plugin manager, which could reside in a number
+of different places - this is implementation specific and may change at any
+time! The generated function will in turn call our <em>originator</em> back, passing
+the command name and base name it was originally given, the current rebar
+config record and the application resource file currently in scope.</p>
+
+<p>The function is expected to return &#8216;ok&#8217; for success, or <code>{error, Reason}</code> in
+the event that something goes wrong.</p>
+
+<h2>Utilising the <code>preprocess/2</code> hook</h2>
+
+<p>If we want our command(s) to get generated &#8216;in time&#8217; for rebar to recognise
+them, then we need to start using the <code>preprocess/2</code> hook. If exported, this
+function is called in much the same way as <em>command-functions</em>, but has
+slightly different semantics.</p>
+
+<p>In the current incarnation of rebar, the return value is expected to be either
+<code>{ok, Predirs::list(string())}</code> or an error tuple. The second element is used
+to indicate to rebar that there are directories which require processing
+<em>before</em> this one - this is the mechanism that rebar&#8217;s <code>sub_dirs</code> and <code>deps</code>
+functionality uses. It is also possible that this approach (to handling both
+sub-directory processing and pre-processing of all commands) may change in
+the future. Whilst writing custom commands and/or command hooks is fairly well
+supported now, despite the lack of an official API, use of the <code>preprocess/2</code>
+hook is a bit more volatile and should be undertaken with this in mind.</p>
+
+<p>Now all the whining caveats are out of the way, let&#8217;s look at how our own
+implementation of <code>preprocess/2</code> will look inside of the
+<a href="https://github.com/hyperthunk/rebar_phase_plugin">rebar_phase_plugin</a>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">spec</span> <span class="n">preprocess</span><span class="p">(</span><span class="nn">rebar_config</span><span class="p">:</span><span class="n">config</span><span class="p">(),</span> <span class="n">string</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="p">{</span><span class="n">&#39;ok&#39;</span><span class="p">,</span> <span class="n">list</span><span class="p">()}.</span>
+</span><span class='line'><span class="nf">preprocess</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="p">_)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="n">is_basedir</span><span class="p">()</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">true</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">commands</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>                <span class="p">[]</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>                <span class="nv">Cmds</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="nn">rebar_plugin_manager</span><span class="p">:</span><span class="n">generate_handler</span><span class="p">(</span><span class="n">basename</span><span class="p">(),</span>
+</span><span class='line'>                                                            <span class="nv">Cmds</span><span class="p">,</span> <span class="no">?MODULE</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">end</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">false</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="n">ok</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="p">[]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see, we&#8217;re not returning any pre-dirs, but are simply using this
+hook for its side effects - this is the reason I suspect the semantics of
+<code>preprocess/2</code> could possibly change some time in the future - and our code
+should look fairly familiar if you&#8217;ve been following the series.</p>
+
+<p>Firstly we exclude any processing unless we&#8217;re running in the <code>base_dir</code>.
+Although we&#8217;ve previously looked at an annotations based solution for this
+selective processing rule, it won&#8217;t apply cleanly to <code>preprocess/2</code> so we&#8217;re
+going to leave it out and focus on delivering the functionality first.</p>
+
+<p>The code&#8217;s working is pretty obvious - we collect a list of &#8216;commands&#8217; and if
+it is non-empty then we call <code>rebar_plugin_manager</code> and ask it to do the work
+of generating handlers for us. Collecting the commands is a call to our old
+friend <code>rebar_config</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">commands</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="n">load_phases</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="p">[]</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="p">[];</span>
+</span><span class='line'>        <span class="nv">Phases</span> <span class="k">when</span> <span class="nb">is_list</span><span class="p">(</span><span class="nv">Phases</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="p">[</span> <span class="n">generate_command</span><span class="p">(</span><span class="nv">Phase</span><span class="p">)</span> <span class="p">||</span> <span class="nv">Phase</span> <span class="o">&lt;-</span> <span class="nv">Phases</span> <span class="p">]</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">load_phases</span><span class="p">(</span><span class="nv">Config</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_global</span><span class="p">({</span><span class="n">phases</span><span class="p">,</span> <span class="nv">Config</span><span class="p">},</span> <span class="n">undefined</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">undefined</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="nn">rebar_config</span><span class="p">:</span><span class="n">get_local</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">phases</span><span class="p">,</span> <span class="p">[])</span> <span class="k">of</span>
+</span><span class='line'>                <span class="p">[]</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="nn">rebar_config</span><span class="p">:</span><span class="nb">get</span><span class="p">(</span><span class="nv">Config</span><span class="p">,</span> <span class="n">phases</span><span class="p">,</span> <span class="p">[]);</span>
+</span><span class='line'>                <span class="nv">Defs</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="nv">Defs</span>
+</span><span class='line'>            <span class="k">end</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">Phases</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="nv">Phases</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">generate_command</span><span class="p">({</span><span class="nv">PhaseName</span><span class="p">,</span> <span class="nv">PhaseCommands</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">generate_command</span><span class="p">({</span><span class="nv">PhaseName</span><span class="p">,</span> <span class="p">[],</span> <span class="nv">PhaseCommands</span><span class="p">});</span>
+</span><span class='line'><span class="nf">generate_command</span><span class="p">({</span><span class="nv">PhaseName</span><span class="p">,</span> <span class="nv">PhaseDepends</span><span class="p">,</span> <span class="nv">PhaseCommands</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">command</span><span class="p">,</span> <span class="nv">PhaseName</span><span class="p">,</span> <span class="nv">PhaseDepends</span><span class="p">,</span> <span class="nv">PhaseCommands</span><span class="p">}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As we can see, the real work of glueing the lifecycle together is done by the
+user in either their global or local configuration files.</p>
+
+<h2>Working with rebar_plugin_manager&#8217;s execute_command/4 callback</h2>
+
+<p>With all these bits of <em>infrastructure</em> in place, we can now look at how the
+<a href="https://github.com/hyperthunk/rebar_phase_plugin">phase plugin</a> will implement the actual processing. Here
+we will get to see just how badly we&#8217;re abusing rebar&#8217;s internals in order to
+achieve our goals.</p>
+
+<p>When rebar is first called, the outer module that handles the escript entry
+point - <code>rebar:main/1</code> - does some initial setup work and then delegates off
+to <code>rebar_core:process_commands/2</code>, passing the list of given commands and the
+initial rebar config set. This latter function is where the code that drives
+rebar really lives, and this is clearly meant for internal consumption.</p>
+
+<p>Nonetheless, we are going to call this function ourselves, passing a list of
+command atoms that we wish to be processed during each stage. We will also
+implement our &#8216;dependency&#8217; between phases here, with a bit of simple
+recursion.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">-</span><span class="ni">spec</span> <span class="n">execute_command</span><span class="p">(</span><span class="n">atom</span><span class="p">(),</span> <span class="n">string</span><span class="p">(),</span>
+</span><span class='line'>                      <span class="nn">rebar_config</span><span class="p">:</span><span class="n">config</span><span class="p">(),</span>
+</span><span class='line'>                      <span class="n">string</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">&#39;ok&#39;</span> <span class="p">|</span> <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="n">any</span><span class="p">()}.</span>
+</span><span class='line'><span class="nf">execute_command</span><span class="p">(</span><span class="nv">Command</span><span class="p">,</span> <span class="nv">Root</span><span class="p">,</span> <span class="nv">Config</span><span class="p">,</span> <span class="nv">AppFile</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="p">[</span> <span class="nv">Err</span> <span class="p">||</span> <span class="nv">Err</span> <span class="o">&lt;-</span> <span class="nn">lists</span><span class="p">:</span><span class="n">map</span><span class="p">(</span>
+</span><span class='line'>        <span class="k">fun</span><span class="p">({</span><span class="n">command</span><span class="p">,</span> <span class="p">_,</span> <span class="nv">PhaseDepends</span><span class="p">,</span> <span class="nv">PhaseCommands</span><span class="p">})</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="nv">PhaseDepends</span> <span class="k">of</span>
+</span><span class='line'>                <span class="p">[]</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>                <span class="nv">Deps</span> <span class="k">when</span> <span class="nb">is_list</span><span class="p">(</span><span class="nv">Deps</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="p">[</span> <span class="n">execute_command</span><span class="p">(</span><span class="nv">C</span><span class="p">,</span> <span class="nv">Root</span><span class="p">,</span>
+</span><span class='line'>                                    <span class="nv">Config</span><span class="p">,</span> <span class="nv">AppFile</span><span class="p">)</span> <span class="p">||</span> <span class="nv">C</span> <span class="o">&lt;-</span> <span class="nv">Deps</span> <span class="p">];</span>
+</span><span class='line'>                <span class="nv">Dep</span> <span class="k">when</span> <span class="nb">is_atom</span><span class="p">(</span><span class="nv">Dep</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="n">execute_command</span><span class="p">(</span><span class="nv">Dep</span><span class="p">,</span> <span class="nv">Root</span><span class="p">,</span> <span class="nv">Config</span><span class="p">,</span> <span class="nv">AppFile</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>            <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s">&quot;Processing phases </span><span class="si">~p~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">PhaseCommands</span><span class="p">]),</span>
+</span><span class='line'>            <span class="nn">rebar_core</span><span class="p">:</span><span class="n">process_commands</span><span class="p">(</span><span class="nv">PhaseCommands</span><span class="p">,</span> <span class="nv">Config</span><span class="p">);</span>
+</span><span class='line'>         <span class="p">(</span><span class="nv">C</span><span class="p">)</span> <span class="k">when</span> <span class="nb">is_atom</span><span class="p">(</span><span class="nv">C</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>             <span class="nn">rebar_log</span><span class="p">:</span><span class="n">log</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s">&quot;Processing phase </span><span class="si">~p~n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">C</span><span class="p">]),</span>
+</span><span class='line'>             <span class="nn">rebar_core</span><span class="p">:</span><span class="n">process_commands</span><span class="p">([</span><span class="nv">C</span><span class="p">],</span> <span class="nv">Config</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span><span class="p">,</span> <span class="n">lookup_phase_config</span><span class="p">(</span><span class="nv">Command</span><span class="p">,</span> <span class="nv">Config</span><span class="p">)),</span> <span class="nv">Err</span> <span class="o">/=</span> <span class="n">ok</span> <span class="p">]</span> <span class="k">of</span>
+</span><span class='line'>        <span class="p">[]</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">Other</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="nv">Other</span><span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">%%</span>
+</span><span class='line'><span class="c">%% Internal API</span>
+</span><span class='line'><span class="c">%%</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">lookup_phase_config</span><span class="p">(</span><span class="nv">Command</span><span class="p">,</span> <span class="nv">Config</span><span class="p">)</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="p">[</span> <span class="nv">C</span> <span class="p">||</span> <span class="p">{</span><span class="n">command</span><span class="p">,</span> <span class="nv">Cmd</span><span class="p">,</span> <span class="p">_,</span> <span class="p">_}</span><span class="o">=</span><span class="nv">C</span> <span class="o">&lt;-</span> <span class="n">commands</span><span class="p">(</span><span class="nv">Config</span><span class="p">),</span> <span class="nv">Cmd</span> <span class="o">==</span> <span class="nv">Command</span> <span class="p">].</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And minus the few little utility functions (like basedir and basename) that
+are required during <code>preprocess/2</code>, this is all our plugin needs to do! Once
+<code>rebar_core:process_commands/2</code> kicks in, everything simply works as expected.</p>
+
+<p>The user&#8217;s configuration will need to look something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%% define the build lifecycle</span>
+</span><span class='line'><span class="p">{</span><span class="n">phases</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">build</span><span class="p">,</span>              <span class="p">[],</span>    <span class="p">[</span><span class="n">&#39;get-deps&#39;</span><span class="p">,</span> <span class="n">compile</span><span class="p">]},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">test</span><span class="p">,</span>               <span class="n">build</span><span class="p">,</span> <span class="p">[</span><span class="n">eunit</span><span class="p">,</span> <span class="n">quickcheck</span><span class="p">]},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">&#39;integration-test&#39;</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span>  <span class="p">[</span><span class="n">ct</span><span class="p">]},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">package</span><span class="p">,</span>            <span class="n">test</span><span class="p">,</span>  <span class="p">[</span><span class="n">dist</span><span class="p">]}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is an example project in the <a href="https://github.com/hyperthunk/rebar_phase_plugin">rebar_phase_plugin&#8217;s</a>
+source tree that demonstrates this. Here&#8217;s a quick look at a session:</p>
+
+<pre><code>t4@malachi:integration-test $ rebar integration-test -v
+==&gt; integration-test (integration-test)
+==&gt; integration-test (eunit)
+======================== EUnit ========================
+module 'foo_app'
+module 'foo_mod1'
+  module 'foo_mod1_tests'
+module 'foo_sup'
+  There were no tests to run.
+==&gt; integration-test (ct)
+
+Common Test v1.6 starting (cwd is /Users/t4/work/hyperthunk/rebar_phase_plugin/examples/integration-test)
+Common Test: Running make in test directories...
+
+CWD set to: "/Users/t4/work/hyperthunk/rebar_phase_plugin/examples/integration-test/logs/ct_run.test@malachi.local.2012-02-28_15.18.17"
+
+TEST INFO: 1 test(s), 0 case(s) in 0 suite(s)
+
+Testing examples.integration-test: Starting test, 0 test cases
+Testing examples.integration-test: TEST COMPLETE, 0 ok, 0 failed of 0 test cases
+
+Updating /Users/t4/work/hyperthunk/rebar_phase_plugin/examples/integration-test/logs/index.html... done
+Updating /Users/t4/work/hyperthunk/rebar_phase_plugin/examples/integration-test/logs/all_runs.html... done
+
+DONE.
+Testing examples.integration-test: TEST COMPLETE, 0 ok, 0 failed of 0 test cases
+
+t4@malachi:integration-test $ 
+</code></pre>
+
+<p>There are no actual tests in the example project, but the point is to illustrate
+how the <a href="https://github.com/hyperthunk/rebar_phase_plugin">phase plugin</a> works in terms of running multiple
+commands and their dependant phases when required. Here&#8217;s the rebar.config we
+use in the example project:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">{</span><span class="n">deps</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">rebar_phase_plugin</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;../../../&quot;</span><span class="p">,</span> <span class="s">&quot;master&quot;</span><span class="p">}},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">rebar_skip_deps</span><span class="p">,</span> <span class="s">&quot;.*&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">git</span><span class="p">,</span> <span class="s">&quot;git://github.com/hyperthunk/rebar_skip_deps.git&quot;</span><span class="p">}}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">skip_dep_cmds</span><span class="p">,</span> <span class="p">[</span><span class="n">&#39;integration-test&#39;</span><span class="p">,</span> <span class="n">eunit</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">ct</span><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">phases</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">test</span><span class="p">,</span> <span class="p">[</span><span class="n">&#39;check-deps&#39;</span><span class="p">,</span> <span class="n">compile</span><span class="p">],</span> <span class="p">[</span><span class="n">eunit</span><span class="p">]},</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">&#39;integration-test&#39;</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="p">[</span><span class="n">ct</span><span class="p">]}</span>
+</span><span class='line'><span class="p">]}.</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span><span class="n">plugins</span><span class="p">,</span> <span class="p">[</span><span class="n">rebar_plugin_manager</span><span class="p">,</span> <span class="n">rebar_phase_plugin</span><span class="p">,</span> <span class="n">rebar_skip_deps</span><span class="p">]}.</span>
+</span><span class='line'><span class="p">{</span><span class="n">plugin_dir</span><span class="p">,</span> <span class="s">&quot;deps/rebar_plugin_manager/src&quot;</span><span class="p">}.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Next time&#8230;</h2>
+
+<p>Next time we will continue looking at the rebar phase plugin, this time with a
+focus on testing rebar plugins and shipping common configuration data.</p>
+
+<h2>Links</h2>
+
+<p>As promised, all the relevant links for this article are listed below.</p>
+
+<ol>
+<li><a href="https://github.com/hyperthunk/rebar_phase_plugin">rebar phase plugin</a></li>
+<li><a href="https://github.com/hyperthunk/rebar_plugin_manager">rebar plugin manager</a></li>
+</ol>
+
+
+  
+    <footer>
+      <p class="meta">
+        
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-28T08:32:00+00:00" pubdate data-updated="true">Feb 28<span>th</span>, 2012</time>
+        
+      </p>
+      
+        <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://hyperthunk.github.com/rebar-plugin-tutorial/part-4-extreme-customisations/index.html" data-via="" data-counturl="http://hyperthunk.github.com/rebar-plugin-tutorial/part-4-extreme-customisations/index.html" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+</div>
+
+      
+    </footer>
+  
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Pages</h1>
+  <ul id="pages">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/atom.xml"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/archives/index.html">Blog Archive</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/index.html"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/index.html"></a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">Part 1 - Introducing Rebar Plugins</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2 - Plugin Anatomy</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-3-packaging-plugins/index.html">Part 3 - Packaging Plugins</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-4-extreme-customisations/index.html">part 4 - extreme customisations</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/blog/2012/01/04/welcome-to-the-rebar-plugins-tutorial/">Welcome to the Rebar Plugins tutorial</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>Github Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/hyperthunk">@hyperthunk</a> on Github
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'hyperthunk',
+            count: 40,
+            skip_forks: true,
+            target: '#gh_repos',
+			filter: function(repo) { return /rebar/.test(repo['name']); }
+        });
+    });
+  </script>
+  <script src="/rebar-plugin-tutorial/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Tim Watson -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

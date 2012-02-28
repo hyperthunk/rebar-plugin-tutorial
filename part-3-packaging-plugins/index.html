@@ -83,7 +83,7 @@ plugin module. In &hellip;">
 <time datetime="2012-01-04T11:25:00+00:00" pubdate data-updated="true">Jan 4<span>th</span>, 2012</time></p>
   </header>
   
-  <p>In parts <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">one</a> and <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">two</a> we introduced rebar plugins and looked at the basic anatomy of a
+  <p>In parts <a href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">one</a> and <a href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">two</a> we introduced rebar plugins and looked at the basic anatomy of a
 plugin module. In this article we&#8217;ll be looking at how you can package plugins
 as <em>external dependencies</em> along with additional dependencies that your plugin
 requires. We&#8217;ll also be looking at the pre and post command hooks that plugins
@@ -267,7 +267,7 @@ works with</p>
 
 
 <p>Of the two, local configuration data is itself handled in two disparate ways.
-As we mentioned in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">Part 1</a>, each time a new directory is processed, a
+As we mentioned in <a href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-1-introducing-rebar-plugins/index.html">Part 1</a>, each time a new directory is processed, a
 new configuration set is created - either by reading the local <code>rebar.config</code>
 file or creating an empty one. It is this <em>local to the directory</em>
 configuration which we&#8217;re reading when we call <code>rebar_config:get_local/3</code>. The
@@ -492,14 +492,14 @@ t4@malachi:rebar-plugin-tutorial $
 
 <p>Now the other thing to note is that the <code>pre_get-deps</code> command is running for
 each of the dependencies as well as the top level project. We&#8217;ve come across
-this aspect of rebars build lifecycle before (in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>) and we can
+this aspect of rebars build lifecycle before (in <a href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>) and we can
 either make the user <code>skip_deps</code> or we can handle the edge case in the plugin.
 There is an argument <em>for</em> letting a dependency handling command/plugin
 continue to process directories recursively, but in practise we&#8217;ll see that
 this doesn&#8217;t work without significant coding on the part of the plugin author.</p>
 
 <p>For now, we&#8217;re just going to exclude anything outside of <code>base_dir</code> as we did
-in <a href="http://hyperthunk.githuh.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>. To avoid writing all the tedious <code>case is_base_dir()</code>
+in <a href="http://hyperthunk.github.com/rebar-plugin-tutorial/part-2-plugin-anatomy/index.html">Part 2</a>. To avoid writing all the tedious <code>case is_base_dir()</code>
 boilerplate everywhere, we&#8217;re going to utilise an <a href="https://github.com/hyperthunk/annotations">annotation</a>
 that I&#8217;ve written in to a
 <a href="https://github.com/hyperthunk/rebar_annotations/blob/master/src/base_dir.erl">little library</a>,
@@ -929,6 +929,10 @@ correctly so that plugins are available.</p>
     
       <li class="post">
         <a href="/rebar-plugin-tutorial/part-3-packaging-plugins/index.html">Part 3 - Packaging Plugins</a>
+      </li>
+    
+      <li class="post">
+        <a href="/rebar-plugin-tutorial/part-4-extreme-customisations/index.html">part 4 - extreme customisations</a>
       </li>
     
   </ul>
